@@ -1,0 +1,1496 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ניהול לקוחות — מפה ומסלולים</title>
+  <meta name="theme-color" content="#0f6e6e" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="ניהול לקוחות" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230f6e6e'/%3E%3Ctext x='16' y='21' font-size='11' text-anchor='middle' fill='white' font-family='Arial,sans-serif' font-weight='700'%3EEC%3C/text%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <style>
+    :root {
+      --bg: #eef2f6;
+      --surface: #ffffff;
+      --ink: #1c2333;
+      --muted: #5b6577;
+      --line: #e2e8f0;
+      --primary: #0f6e6e;
+      --primary-dark: #0b5555;
+      --primary-soft: #e6f4f4;
+      --danger: #c62828;
+      --danger-soft: #fdecea;
+      --warn: #b45309;
+      --warn-soft: #fff7ed;
+      --shadow: 0 8px 24px rgba(16, 24, 40, 0.08);
+      --sidebar-w: 400px;
+      --header-h: 60px;
+      --radius: 12px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      font-family: "Assistant", "Segoe UI", "Arial Hebrew", Arial, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+    }
+
+    button, input, textarea, select { font-family: inherit; }
+
+    /* Layout is LTR so the list stays on the LEFT and the map on the RIGHT,
+       even though all text is RTL Hebrew. */
+    .app {
+      direction: ltr;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      min-height: 100vh;
+    }
+
+    .app-header, .sidebar, .modal, .lock-screen, .toast {
+      direction: rtl;
+    }
+
+    .app-header {
+      height: var(--header-h);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 0 16px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--line);
+      box-shadow: 0 1px 0 rgba(16, 24, 40, 0.03);
+      z-index: 20;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      width: 34px;
+      height: 34px;
+      border-radius: 9px;
+      background: linear-gradient(145deg, #148383, #0b4f4f);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+
+    .brand h1 {
+      font-size: 17px;
+      font-weight: 700;
+      line-height: 1.15;
+    }
+
+    .brand p {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    .header-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: flex-start;
+    }
+
+    .btn {
+      appearance: none;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      color: var(--ink);
+      border-radius: 9px;
+      padding: 7px 12px;
+      font-size: 13.5px;
+      font-weight: 600;
+      cursor: pointer;
+      line-height: 1.3;
+      transition: background 0.15s, border-color 0.15s, transform 0.1s;
+    }
+    .btn:hover { background: #f8fafc; }
+    .btn:active { transform: translateY(1px); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .btn-primary {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #fff;
+    }
+    .btn-primary:hover { background: var(--primary-dark); border-color: var(--primary-dark); }
+
+    .btn-danger {
+      background: var(--danger-soft);
+      border-color: #f5c2c0;
+      color: var(--danger);
+    }
+    .btn-danger:hover { background: #fad2d0; }
+
+    .btn-ghost { background: transparent; }
+
+    .btn-sm { padding: 4px 8px; font-size: 12.5px; border-radius: 7px; }
+
+    .app-body {
+      flex: 1;
+      display: flex;
+      min-height: 0;
+      direction: ltr;
+    }
+
+    .sidebar {
+      width: var(--sidebar-w);
+      flex-shrink: 0;
+      background: var(--surface);
+      border-right: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .sidebar-top {
+      padding: 12px 14px 10px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .search-wrap { position: relative; }
+
+    .search-wrap input {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: #f8fafc;
+      border-radius: 10px;
+      padding: 9px 12px 9px 12px;
+      font-size: 14px;
+      outline: none;
+      color: var(--ink);
+    }
+    .search-wrap input:focus {
+      border-color: var(--primary);
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(15, 110, 110, 0.15);
+    }
+
+    .filters-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .filters-label {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .color-filters { display: flex; gap: 5px; flex-wrap: wrap; }
+
+    .color-chip {
+      width: 20px;
+      height: 20px;
+      border-radius: 6px;
+      border: 2px solid #fff;
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.18);
+      cursor: pointer;
+      padding: 0;
+      opacity: 0.28;
+      transform: scale(0.92);
+      transition: opacity 0.15s, transform 0.15s;
+    }
+    .color-chip.active { opacity: 1; transform: scale(1); }
+
+    .legend {
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 8px 10px;
+    }
+    .legend summary {
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      list-style: none;
+    }
+    .legend summary::-webkit-details-marker { display: none; }
+    .legend-grid {
+      display: grid;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .legend-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .legend-swatch {
+      width: 14px;
+      height: 14px;
+      border-radius: 4px;
+      flex-shrink: 0;
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.12);
+    }
+    .legend-row input {
+      flex: 1;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-size: 13px;
+      background: #fff;
+    }
+
+    .list-wrap {
+      flex: 1;
+      overflow-y: auto;
+      min-height: 0;
+    }
+
+    .empty-state {
+      text-align: center;
+      color: var(--muted);
+      padding: 36px 20px;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .customer-row {
+      display: grid;
+      grid-template-columns: auto auto 1fr auto;
+      gap: 8px;
+      align-items: start;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--line);
+      cursor: pointer;
+      background: #fff;
+      transition: background 0.12s;
+    }
+    .customer-row:hover { background: #f8fafc; }
+    .customer-row.selected {
+      background: var(--primary-soft);
+      box-shadow: inset 3px 0 0 var(--primary);
+    }
+    .customer-row.placing {
+      background: var(--warn-soft);
+    }
+
+    .row-check { margin-top: 3px; accent-color: var(--primary); width: 16px; height: 16px; cursor: pointer; }
+
+    .color-sq {
+      width: 18px;
+      height: 18px;
+      border-radius: 4px;
+      margin-top: 2px;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.18);
+      padding: 0;
+      flex-shrink: 0;
+    }
+    .color-sq:hover { outline: 2px solid rgba(15, 110, 110, 0.45); outline-offset: 1px; }
+
+    .row-main { min-width: 0; }
+    .row-name { font-weight: 700; font-size: 14.5px; line-height: 1.3; }
+    .row-addr, .row-meta {
+      font-size: 12.5px;
+      color: var(--muted);
+      margin-top: 2px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .row-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .sidebar-footer {
+      border-top: 1px solid var(--line);
+      padding: 10px 14px 12px;
+      background: #fbfcfd;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .footer-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .footer-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+    .map-pane {
+      flex: 1;
+      min-width: 0;
+      position: relative;
+      background: #d9e2ec;
+    }
+    #map { height: 100%; width: 100%; }
+
+    .map-hint {
+      position: absolute;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+      background: #1c2333;
+      color: #fff;
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: 13.5px;
+      font-weight: 600;
+      box-shadow: var(--shadow);
+      display: none;
+      white-space: nowrap;
+      max-width: calc(100% - 24px);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      direction: rtl;
+    }
+    .map-hint.visible { display: block; }
+
+    .leaflet-popup-content { direction: rtl; text-align: right; margin: 10px 12px; }
+    .popup-title { font-weight: 700; font-size: 15px; margin-bottom: 2px; }
+    .popup-line { font-size: 13px; color: #445; margin: 2px 0; }
+    .popup-actions { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+    .popup-actions a { text-decoration: none; }
+
+    .marker-dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 2px solid #fff;
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.25), 0 1px 4px rgba(0,0,0,0.3);
+    }
+    .marker-dot.selected {
+      width: 20px;
+      height: 20px;
+      box-shadow: 0 0 0 3px rgba(15, 110, 110, 0.45), 0 1px 6px rgba(0,0,0,0.35);
+    }
+
+    /* Lock screen */
+    .lock-screen {
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(160deg, #0b3d3d 0%, #102030 60%, #1a2740 100%);
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .lock-screen.hidden { display: none; }
+    .lock-card {
+      width: min(400px, 100%);
+      background: #fff;
+      border-radius: 16px;
+      padding: 28px 24px 24px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+    }
+    .lock-card h2 { font-size: 22px; margin: 8px 0 4px; }
+    .lock-card .sub { color: var(--muted); margin-bottom: 18px; font-size: 14px; }
+    .lock-card label { display: block; font-weight: 600; font-size: 13px; margin-bottom: 6px; }
+    .lock-card input[type="password"] {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 16px;
+      outline: none;
+      margin-bottom: 8px;
+    }
+    .lock-card input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(15, 110, 110, 0.15); }
+    .lock-error { color: var(--danger); font-size: 13px; min-height: 18px; margin-bottom: 8px; font-weight: 600; }
+    .lock-card .btn-primary { width: 100%; padding: 10px; font-size: 15px; }
+
+    /* Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(16, 24, 40, 0.45);
+      z-index: 1500;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      width: min(480px, 100%);
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      max-height: calc(100vh - 32px);
+      overflow: auto;
+    }
+    .modal header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 18px 8px;
+    }
+    .modal header h2 { font-size: 18px; }
+    .modal .form { padding: 8px 18px 18px; display: flex; flex-direction: column; gap: 10px; }
+    .field label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+    .field input, .field textarea, .field select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      padding: 8px 10px;
+      font-size: 14px;
+      outline: none;
+      background: #fff;
+    }
+    .field textarea { min-height: 70px; resize: vertical; }
+    .field input:focus, .field textarea:focus, .field select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(15, 110, 110, 0.15);
+    }
+    .color-picker { display: flex; gap: 6px; flex-wrap: wrap; }
+    .color-option {
+      width: 26px;
+      height: 26px;
+      border-radius: 7px;
+      border: 2px solid transparent;
+      cursor: pointer;
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.15);
+    }
+    .color-option.chosen { border-color: var(--ink); box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--ink); }
+    .form-actions { display: flex; gap: 8px; justify-content: flex-start; flex-wrap: wrap; margin-top: 6px; }
+    .form-status { font-size: 13px; color: var(--muted); min-height: 18px; }
+    .form-status.error { color: var(--danger); font-weight: 600; }
+
+    .toast {
+      position: fixed;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: #1c2333;
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      z-index: 3000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s, transform 0.2s;
+      max-width: min(520px, calc(100% - 24px));
+      text-align: center;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    @media (max-width: 800px) {
+      .app-body { flex-direction: column; }
+      .sidebar {
+        width: 100%;
+        height: 48vh;
+        border-right: none;
+        border-bottom: 1px solid var(--line);
+      }
+      .map-pane { height: 52vh; min-height: 280px; }
+      .brand p { display: none; }
+      .header-actions .btn { padding: 6px 8px; font-size: 12.5px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="lockScreen" class="lock-screen">
+    <form class="lock-card" id="lockForm" autocomplete="off">
+      <div class="brand-mark" style="margin-inline-start:0;">EC</div>
+      <h2>ניהול לקוחות</h2>
+      <p class="sub">הזן סיסמה כדי להיכנס לאפליקציה</p>
+      <label for="lockPassword">סיסמה</label>
+      <input id="lockPassword" type="password" autocomplete="current-password" required />
+      <div id="lockError" class="lock-error"></div>
+      <button class="btn btn-primary" type="submit">כניסה</button>
+    </form>
+  </div>
+
+  <div class="app" id="appShell">
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-mark">EC</div>
+        <div>
+          <h1>ניהול לקוחות</h1>
+          <p>מפה, תיוג צבעים ותכנון מסלול</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="btn" type="button" id="btnExport">ייצוא JSON</button>
+        <button class="btn" type="button" id="btnImport">ייבוא JSON</button>
+        <input type="file" id="importFile" accept="application/json,.json" hidden />
+        <button class="btn" type="button" id="btnDemo">טען לקוחות הדגמה</button>
+        <button class="btn btn-primary" type="button" id="btnAdd">+ לקוח חדש</button>
+      </div>
+    </header>
+
+    <div class="app-body">
+      <aside class="sidebar">
+        <div class="sidebar-top">
+          <div class="search-wrap">
+            <input id="searchInput" type="search" placeholder="חיפוש לפי שם, כתובת או טלפון..." />
+          </div>
+          <div class="filters-row">
+            <span class="filters-label">סינון צבע:</span>
+            <div class="color-filters" id="colorFilters"></div>
+          </div>
+          <details class="legend">
+            <summary>מקרא צבעים — אפשר לתת שם לכל צבע</summary>
+            <div class="legend-grid" id="legendGrid"></div>
+          </details>
+        </div>
+        <div class="list-wrap" id="customerList"></div>
+        <div class="sidebar-footer">
+          <div class="footer-row">
+            <span id="selectionCount">0 לקוחות נבחרו למסלול</span>
+            <div class="footer-actions">
+              <button class="btn btn-sm" type="button" id="btnSelectVisible">בחר מוצגים</button>
+              <button class="btn btn-sm" type="button" id="btnClearSelection">נקה בחירה</button>
+            </div>
+          </div>
+          <button class="btn btn-primary" type="button" id="btnRoute">פתח מסלול ב-Google Maps</button>
+        </div>
+      </aside>
+      <div class="map-pane">
+        <div id="map"></div>
+        <div id="mapHint" class="map-hint"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="modalBackdrop">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <header>
+        <h2 id="modalTitle">לקוח חדש</h2>
+        <button class="btn btn-ghost btn-sm" type="button" id="btnModalClose">סגירה</button>
+      </header>
+      <form class="form" id="customerForm">
+        <input type="hidden" id="fieldId" />
+        <div class="field">
+          <label for="fieldName">שם</label>
+          <input id="fieldName" required maxlength="120" />
+        </div>
+        <div class="field">
+          <label for="fieldAddress">כתובת</label>
+          <input id="fieldAddress" maxlength="200" placeholder="רחוב, מספר, עיר" />
+        </div>
+        <div class="field">
+          <label for="fieldPhone">טלפון (אופציונלי)</label>
+          <input id="fieldPhone" maxlength="30" />
+        </div>
+        <div class="field">
+          <label for="fieldNotes">הערות (אופציונלי)</label>
+          <textarea id="fieldNotes" maxlength="500"></textarea>
+        </div>
+        <div class="field">
+          <label>צבע תיוג</label>
+          <div class="color-picker" id="formColors"></div>
+        </div>
+        <div class="form-status" id="formStatus"></div>
+        <div class="form-actions">
+          <button class="btn btn-primary" type="submit" id="btnSave">שמירה</button>
+          <button class="btn" type="button" id="btnManualPlace">סמן ידנית על המפה</button>
+          <button class="btn btn-ghost" type="button" id="btnCancelForm">ביטול</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script>
+  (function () {
+    "use strict";
+
+    /*
+     * App unlock password is stored as a SHA-256 hex digest only (never in plaintext).
+     * To change it:
+     *   1. In the browser console run:
+     *      crypto.subtle.digest("SHA-256", new TextEncoder().encode("NEW_PASSWORD"))
+     *        .then(buf => console.log([...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("")));
+     *   2. Replace the APP_PASSWORD_SHA256 value below with the printed hex string.
+     */
+    const APP_PASSWORD_SHA256 = "6a9fface2fa7c8a228e795d18566e3d81f3bd3e5cd4d2dcaf09cdbec7c5b9af3";
+    const STORAGE_KEY = "element-customers-map-v1";
+    const SESSION_KEY = "element-customers-map-unlocked";
+    const ISRAEL_CENTER = [31.5, 34.9];
+    const ISRAEL_ZOOM = 8;
+    const MAX_ROUTE_STOPS = 10;
+    const NOMINATIM_GAP_MS = 1100;
+
+    const COLORS = [
+      { id: "red",    hex: "#e53935", label: "אדום" },
+      { id: "orange", hex: "#fb8c00", label: "כתום" },
+      { id: "yellow", hex: "#fdd835", label: "צהוב" },
+      { id: "green",  hex: "#43a047", label: "ירוק" },
+      { id: "teal",   hex: "#00897b", label: "טורקיז" },
+      { id: "blue",   hex: "#1e88e5", label: "כחול" },
+      { id: "purple", hex: "#8e24aa", label: "סגול" },
+      { id: "gray",   hex: "#757575", label: "אפור" }
+    ];
+    const COLOR_IDS = COLORS.map(function (c) { return c.id; });
+
+    const DEMO_CUSTOMERS = [
+      {
+        id: "demo-tlv",
+        name: "לקוח הדגמה 1 — תל אביב",
+        address: "דיזנגוף 50, תל אביב (הדגמה)",
+        phone: "03-0000001",
+        notes: "נתוני הדגמה בלבד — לא לקוח אמיתי",
+        color: "blue",
+        lat: 32.0758,
+        lng: 34.7752
+      },
+      {
+        id: "demo-jer",
+        name: "לקוח הדגמה 2 — ירושלים",
+        address: "יפו 10, ירושלים (הדגמה)",
+        phone: "02-0000002",
+        notes: "נתוני הדגמה בלבד — לא לקוח אמיתי",
+        color: "green",
+        lat: 31.7832,
+        lng: 35.2170
+      },
+      {
+        id: "demo-hai",
+        name: "לקוח הדגמה 3 — חיפה",
+        address: "הנמל 1, חיפה (הדגמה)",
+        phone: "04-0000003",
+        notes: "נתוני הדגמה בלבד — לא לקוח אמיתי",
+        color: "orange",
+        lat: 32.8193,
+        lng: 34.9990
+      }
+    ];
+
+    let state = {
+      customers: [],
+      legend: {},
+      selectedId: null,
+      routeIds: [],
+      hiddenColors: [],
+      search: "",
+      placingId: null,
+      formColor: "blue"
+    };
+
+    let map = null;
+    let markers = {};
+    let lastNominatimAt = 0;
+    let mapReady = false;
+
+    function $(id) { return document.getElementById(id); }
+
+    function escapeHtml(str) {
+      return String(str == null ? "" : str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    async function sha256hex(text) {
+      const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+      return Array.from(new Uint8Array(buf)).map(function (b) {
+        return b.toString(16).padStart(2, "0");
+      }).join("");
+    }
+
+    function colorById(id) {
+      return COLORS.find(function (c) { return c.id === id; }) || COLORS[5];
+    }
+
+    function nextColorId(id) {
+      const i = COLOR_IDS.indexOf(id);
+      return COLOR_IDS[(i + 1) % COLOR_IDS.length];
+    }
+
+    function uid() {
+      if (crypto.randomUUID) return crypto.randomUUID();
+      return "c-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8);
+    }
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const data = JSON.parse(raw);
+        if (Array.isArray(data.customers)) state.customers = data.customers;
+        if (data.legend && typeof data.legend === "object") state.legend = data.legend;
+      } catch (err) {
+        console.warn("loadState failed", err);
+      }
+    }
+
+    function saveState() {
+      const payload = {
+        customers: state.customers,
+        legend: state.legend
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    }
+
+    function toast(msg, ms) {
+      const el = $("toast");
+      el.textContent = msg;
+      el.classList.add("show");
+      clearTimeout(toast._t);
+      toast._t = setTimeout(function () { el.classList.remove("show"); }, ms || 2800);
+    }
+
+    function visibleCustomers() {
+      const q = state.search.trim().toLowerCase();
+      const hidden = new Set(state.hiddenColors);
+      return state.customers.filter(function (c) {
+        if (hidden.has(c.color)) return false;
+        if (!q) return true;
+        const blob = [c.name, c.address, c.phone, c.notes].join(" ").toLowerCase();
+        return blob.indexOf(q) !== -1;
+      });
+    }
+
+    /* ---------- Auth ---------- */
+    async function tryUnlock(password) {
+      const hex = await sha256hex(password);
+      return hex === APP_PASSWORD_SHA256;
+    }
+
+    function showApp() {
+      $("lockScreen").classList.add("hidden");
+      if (!mapReady) initMap();
+    }
+
+    async function onLockSubmit(ev) {
+      ev.preventDefault();
+      const input = $("lockPassword");
+      const error = $("lockError");
+      error.textContent = "";
+      const ok = await tryUnlock(input.value);
+      if (ok) {
+        sessionStorage.setItem(SESSION_KEY, "1");
+        input.value = "";
+        showApp();
+      } else {
+        error.textContent = "סיסמה שגויה";
+        input.focus();
+        input.select();
+      }
+    }
+
+    /* ---------- Map ---------- */
+    function initMap() {
+      map = L.map("map", { zoomControl: true }).setView(ISRAEL_CENTER, ISRAEL_ZOOM);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+      }).addTo(map);
+
+      map.on("click", function (e) {
+        if (!state.placingId) return;
+        const c = state.customers.find(function (x) { return x.id === state.placingId; });
+        if (!c) { exitPlaceMode(); return; }
+        c.lat = e.latlng.lat;
+        c.lng = e.latlng.lng;
+        c.updatedAt = Date.now();
+        saveState();
+        exitPlaceMode();
+        selectCustomer(c.id, { fromMap: false, openPopup: true });
+        renderAll();
+        toast("המיקום עודכן");
+      });
+
+      mapReady = true;
+      renderMarkers();
+      setTimeout(function () { map.invalidateSize(); }, 80);
+    }
+
+    function markerIcon(colorId, selected) {
+      const hex = colorById(colorId).hex;
+      const cls = "marker-dot" + (selected ? " selected" : "");
+      const size = selected ? 20 : 16;
+      return L.divIcon({
+        className: "cust-marker",
+        html: '<div class="' + cls + '" style="background:' + hex + '"></div>',
+        iconSize: [size, size],
+        iconAnchor: [size / 2, size / 2],
+        popupAnchor: [0, -size / 2]
+      });
+    }
+
+    function popupHtml(c) {
+      const parts = ['<div class="popup-title">' + escapeHtml(c.name) + "</div>"];
+      if (c.address) parts.push('<div class="popup-line">' + escapeHtml(c.address) + "</div>");
+      if (c.phone) parts.push('<div class="popup-line">' + escapeHtml(c.phone) + "</div>");
+      if (c.notes) parts.push('<div class="popup-line">' + escapeHtml(c.notes) + "</div>");
+      if (c.lat == null || c.lng == null) {
+        parts.push('<div class="popup-line">אין מיקום על המפה עדיין</div>');
+      }
+      const actions = ['<div class="popup-actions">'];
+      if (c.lat != null && c.lng != null) {
+        const waze = "https://waze.com/ul?ll=" + c.lat + "," + c.lng + "&navigate=yes";
+        actions.push('<a class="btn btn-sm btn-primary" href="' + waze + '" target="_blank" rel="noopener">Waze</a>');
+      }
+      actions.push('<button class="btn btn-sm" type="button" data-edit="' + escapeHtml(c.id) + '">עריכה</button>');
+      actions.push("</div>");
+      parts.push(actions.join(""));
+      return parts.join("");
+    }
+
+    function upsertMarker(c) {
+      if (c.lat == null || c.lng == null) {
+        if (markers[c.id]) {
+          map.removeLayer(markers[c.id]);
+          delete markers[c.id];
+        }
+        return;
+      }
+      const selected = state.selectedId === c.id;
+      if (markers[c.id]) {
+        markers[c.id].setLatLng([c.lat, c.lng]);
+        markers[c.id].setIcon(markerIcon(c.color, selected));
+        markers[c.id].setPopupContent(popupHtml(c));
+      } else {
+        const m = L.marker([c.lat, c.lng], {
+          icon: markerIcon(c.color, selected),
+          draggable: true,
+          riseOnHover: true
+        });
+        m.bindPopup(popupHtml(c));
+        m.on("click", function () {
+          selectCustomer(c.id, { fromMap: true, openPopup: true });
+        });
+        m.on("dragend", function (ev) {
+          const pos = ev.target.getLatLng();
+          const live = state.customers.find(function (x) { return x.id === c.id; });
+          if (!live) return;
+          live.lat = pos.lat;
+          live.lng = pos.lng;
+          live.updatedAt = Date.now();
+          saveState();
+          renderList();
+          toast("המיקום עודכן בגרירת הסמן");
+        });
+        m.on("popupopen", function () {
+          const btn = m.getPopup().getElement() && m.getPopup().getElement().querySelector("[data-edit]");
+          if (btn) {
+            btn.addEventListener("click", function () { openForm(c.id); });
+          }
+        });
+        m.addTo(map);
+        markers[c.id] = m;
+      }
+    }
+
+    function renderMarkers() {
+      if (!map) return;
+      const ids = new Set(state.customers.map(function (c) { return c.id; }));
+      Object.keys(markers).forEach(function (id) {
+        if (!ids.has(id)) {
+          map.removeLayer(markers[id]);
+          delete markers[id];
+        }
+      });
+      const hidden = new Set(state.hiddenColors);
+      const q = state.search.trim().toLowerCase();
+      state.customers.forEach(function (c) {
+        const hideColor = hidden.has(c.color);
+        const hideSearch = q && [c.name, c.address, c.phone, c.notes].join(" ").toLowerCase().indexOf(q) === -1;
+        if (hideColor || hideSearch) {
+          if (markers[c.id]) {
+            map.removeLayer(markers[c.id]);
+            delete markers[c.id];
+          }
+          return;
+        }
+        upsertMarker(c);
+      });
+    }
+
+    function enterPlaceMode(id, message) {
+      state.placingId = id;
+      const hint = $("mapHint");
+      hint.textContent = message || "לחץ על המפה כדי לסמן את מיקום הלקוח";
+      hint.classList.add("visible");
+      if (map) map.getContainer().style.cursor = "crosshair";
+      renderList();
+    }
+
+    function exitPlaceMode() {
+      state.placingId = null;
+      $("mapHint").classList.remove("visible");
+      if (map) map.getContainer().style.cursor = "";
+    }
+
+    /* ---------- List & filters ---------- */
+    function renderColorFilters() {
+      const wrap = $("colorFilters");
+      wrap.innerHTML = "";
+      COLORS.forEach(function (c) {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "color-chip" + (state.hiddenColors.indexOf(c.id) === -1 ? " active" : "");
+        b.style.background = c.hex;
+        b.title = (state.legend[c.id] || c.label) + " — לחץ להצגה/הסתרה";
+        b.setAttribute("aria-pressed", state.hiddenColors.indexOf(c.id) === -1 ? "true" : "false");
+        b.addEventListener("click", function () {
+          const i = state.hiddenColors.indexOf(c.id);
+          if (i === -1) state.hiddenColors.push(c.id);
+          else state.hiddenColors.splice(i, 1);
+          renderAll();
+        });
+        wrap.appendChild(b);
+      });
+    }
+
+    function renderLegend() {
+      const grid = $("legendGrid");
+      grid.innerHTML = "";
+      COLORS.forEach(function (c) {
+        const row = document.createElement("div");
+        row.className = "legend-row";
+        const sw = document.createElement("span");
+        sw.className = "legend-swatch";
+        sw.style.background = c.hex;
+        const input = document.createElement("input");
+        input.type = "text";
+        input.maxLength = 40;
+        input.placeholder = "משמעות הצבע (" + c.label + ")";
+        input.value = state.legend[c.id] || "";
+        input.addEventListener("change", function () {
+          const v = input.value.trim();
+          if (v) state.legend[c.id] = v;
+          else delete state.legend[c.id];
+          saveState();
+          renderColorFilters();
+        });
+        row.appendChild(sw);
+        row.appendChild(input);
+        grid.appendChild(row);
+      });
+    }
+
+    function renderList() {
+      const list = $("customerList");
+      const items = visibleCustomers();
+      list.innerHTML = "";
+      if (!state.customers.length) {
+        list.innerHTML = '<div class="empty-state">אין לקוחות עדיין.<br/>לחץ על «לקוח חדש» כדי להוסיף, או טען לקוחות הדגמה.</div>';
+      } else if (!items.length) {
+        list.innerHTML = '<div class="empty-state">אין לקוחות שתואמים לחיפוש או לסינון הצבעים.</div>';
+      } else {
+        items.forEach(function (c) {
+          const row = document.createElement("div");
+          row.className = "customer-row";
+          row.dataset.id = c.id;
+          if (state.selectedId === c.id) row.classList.add("selected");
+          if (state.placingId === c.id) row.classList.add("placing");
+
+          const check = document.createElement("input");
+          check.type = "checkbox";
+          check.className = "row-check";
+          check.checked = state.routeIds.indexOf(c.id) !== -1;
+          check.title = "בחר למסלול";
+          check.addEventListener("click", function (e) { e.stopPropagation(); });
+          check.addEventListener("change", function () {
+            const i = state.routeIds.indexOf(c.id);
+            if (check.checked && i === -1) state.routeIds.push(c.id);
+            if (!check.checked && i !== -1) state.routeIds.splice(i, 1);
+            updateSelectionCount();
+          });
+
+          const sq = document.createElement("button");
+          sq.type = "button";
+          sq.className = "color-sq";
+          sq.style.background = colorById(c.color).hex;
+          sq.title = "לחץ להחלפת צבע (" + (state.legend[c.color] || colorById(c.color).label) + ")";
+          sq.addEventListener("click", function (e) {
+            e.stopPropagation();
+            c.color = nextColorId(c.color);
+            c.updatedAt = Date.now();
+            saveState();
+            renderAll();
+          });
+
+          const main = document.createElement("div");
+          main.className = "row-main";
+          const name = document.createElement("div");
+          name.className = "row-name";
+          name.textContent = c.name;
+          const addr = document.createElement("div");
+          addr.className = "row-addr";
+          addr.textContent = c.address || "אין כתובת";
+          main.appendChild(name);
+          main.appendChild(addr);
+          if (c.lat == null || c.lng == null) {
+            const meta = document.createElement("div");
+            meta.className = "row-meta";
+            meta.textContent = state.placingId === c.id ? "ממתין ללחיצה על המפה…" : "אין מיקום — לחץ לסימון על המפה";
+            main.appendChild(meta);
+          }
+
+          const actions = document.createElement("div");
+          actions.className = "row-actions";
+          const editBtn = document.createElement("button");
+          editBtn.type = "button";
+          editBtn.className = "btn btn-sm";
+          editBtn.textContent = "עריכה";
+          editBtn.addEventListener("click", function (e) { e.stopPropagation(); openForm(c.id); });
+          const delBtn = document.createElement("button");
+          delBtn.type = "button";
+          delBtn.className = "btn btn-sm btn-danger";
+          delBtn.textContent = "מחיקה";
+          delBtn.addEventListener("click", function (e) { e.stopPropagation(); deleteCustomer(c.id); });
+          actions.appendChild(editBtn);
+          actions.appendChild(delBtn);
+
+          row.appendChild(check);
+          row.appendChild(sq);
+          row.appendChild(main);
+          row.appendChild(actions);
+          row.addEventListener("click", function () {
+            if (c.lat == null || c.lng == null) {
+              selectCustomer(c.id, { fromMap: false, openPopup: false });
+              enterPlaceMode(c.id);
+              return;
+            }
+            selectCustomer(c.id, { fromMap: false, openPopup: true });
+          });
+          list.appendChild(row);
+        });
+      }
+      updateSelectionCount();
+    }
+
+    function updateSelectionCount() {
+      const n = state.routeIds.filter(function (id) {
+        return state.customers.some(function (c) { return c.id === id && c.lat != null; });
+      }).length;
+      $("selectionCount").textContent = n === 1 ? "לקוח אחד נבחר למסלול" : (n + " לקוחות נבחרו למסלול");
+    }
+
+    function renderAll() {
+      renderColorFilters();
+      renderList();
+      renderMarkers();
+    }
+
+    function selectCustomer(id, opts) {
+      opts = opts || {};
+      state.selectedId = id;
+      renderList();
+      renderMarkers();
+      const row = document.querySelector('.customer-row[data-id="' + CSS.escape(id) + '"]');
+      if (row && opts.fromMap !== false) {
+        /* always try to scroll into view when coming from the map */
+      }
+      if (row && opts.fromMap) {
+        row.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+      const c = state.customers.find(function (x) { return x.id === id; });
+      const marker = markers[id];
+      if (c && c.lat != null && map && !opts.fromMap) {
+        map.flyTo([c.lat, c.lng], Math.max(map.getZoom(), 13), { duration: 0.6 });
+      }
+      if (marker && opts.openPopup) {
+        marker.openPopup();
+      }
+      if (row && !opts.fromMap) {
+        row.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+    }
+
+    /* ---------- CRUD ---------- */
+    function openForm(id) {
+      const modal = $("modalBackdrop");
+      const c = id ? state.customers.find(function (x) { return x.id === id; }) : null;
+      $("modalTitle").textContent = c ? "עריכת לקוח" : "לקוח חדש";
+      $("fieldId").value = c ? c.id : "";
+      $("fieldName").value = c ? c.name : "";
+      $("fieldAddress").value = c ? c.address : "";
+      $("fieldPhone").value = c ? (c.phone || "") : "";
+      $("fieldNotes").value = c ? (c.notes || "") : "";
+      state.formColor = c ? c.color : "blue";
+      $("formStatus").textContent = "";
+      $("formStatus").classList.remove("error");
+      renderFormColors();
+      modal.classList.add("open");
+      setTimeout(function () { $("fieldName").focus(); }, 30);
+    }
+
+    function closeForm() {
+      $("modalBackdrop").classList.remove("open");
+    }
+
+    function renderFormColors() {
+      const wrap = $("formColors");
+      wrap.innerHTML = "";
+      COLORS.forEach(function (c) {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "color-option" + (state.formColor === c.id ? " chosen" : "");
+        b.style.background = c.hex;
+        b.title = state.legend[c.id] || c.label;
+        b.addEventListener("click", function () {
+          state.formColor = c.id;
+          renderFormColors();
+        });
+        wrap.appendChild(b);
+      });
+    }
+
+    async function geocodeAddress(q) {
+      const query = String(q || "").trim();
+      if (!query) return null;
+      const wait = NOMINATIM_GAP_MS - (Date.now() - lastNominatimAt);
+      if (wait > 0) await new Promise(function (r) { setTimeout(r, wait); });
+      lastNominatimAt = Date.now();
+      const url = "https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=il&q=" + encodeURIComponent(query);
+      const res = await fetch(url, {
+        headers: { "Accept": "application/json", "Accept-Language": "he" }
+      });
+      if (!res.ok) throw new Error("geocode HTTP " + res.status);
+      const data = await res.json();
+      if (!data || !data.length) return null;
+      return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), display: data[0].display_name };
+    }
+
+    function collectForm() {
+      return {
+        id: $("fieldId").value || uid(),
+        name: $("fieldName").value.trim(),
+        address: $("fieldAddress").value.trim(),
+        phone: $("fieldPhone").value.trim(),
+        notes: $("fieldNotes").value.trim(),
+        color: state.formColor
+      };
+    }
+
+    function upsertCustomerRecord(fields, coords) {
+      const existing = state.customers.find(function (x) { return x.id === fields.id; });
+      if (existing) {
+        existing.name = fields.name;
+        existing.address = fields.address;
+        existing.phone = fields.phone;
+        existing.notes = fields.notes;
+        existing.color = fields.color;
+        existing.updatedAt = Date.now();
+        if (coords) {
+          existing.lat = coords.lat;
+          existing.lng = coords.lng;
+        }
+        return existing;
+      }
+      const rec = {
+        id: fields.id,
+        name: fields.name,
+        address: fields.address,
+        phone: fields.phone,
+        notes: fields.notes,
+        color: fields.color,
+        lat: coords ? coords.lat : null,
+        lng: coords ? coords.lng : null,
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      };
+      state.customers.unshift(rec);
+      return rec;
+    }
+
+    async function onFormSubmit(ev) {
+      ev.preventDefault();
+      const fields = collectForm();
+      const status = $("formStatus");
+      status.classList.remove("error");
+      if (!fields.name) {
+        status.textContent = "יש למלא שם לקוח";
+        status.classList.add("error");
+        return;
+      }
+      const existing = state.customers.find(function (x) { return x.id === fields.id; });
+      const addressChanged = !existing || existing.address !== fields.address;
+      const needsGeocode = fields.address && (!existing || addressChanged || existing.lat == null);
+
+      if (needsGeocode) {
+        status.textContent = "מחפש כתובת…";
+        $("btnSave").disabled = true;
+        try {
+          const result = await geocodeAddress(fields.address);
+          $("btnSave").disabled = false;
+          if (result) {
+            const rec = upsertCustomerRecord(fields, result);
+            saveState();
+            closeForm();
+            renderAll();
+            selectCustomer(rec.id, { fromMap: false, openPopup: true });
+            toast("הלקוח נשמר והכתובת אותרה");
+            return;
+          }
+          const rec = upsertCustomerRecord(fields, null);
+          saveState();
+          closeForm();
+          renderAll();
+          selectCustomer(rec.id, { fromMap: false, openPopup: false });
+          enterPlaceMode(rec.id, "הכתובת לא נמצאה. לחץ על המפה כדי לסמן את המיקום");
+          toast("הכתובת לא נמצאה — סמן ידנית על המפה");
+        } catch (err) {
+          $("btnSave").disabled = false;
+          const rec = upsertCustomerRecord(fields, existing && existing.lat != null ? { lat: existing.lat, lng: existing.lng } : null);
+          saveState();
+          closeForm();
+          renderAll();
+          selectCustomer(rec.id, { fromMap: false, openPopup: false });
+          if (rec.lat == null) {
+            enterPlaceMode(rec.id, "לא ניתן היה לאתר את הכתובת. לחץ על המפה כדי לסמן את המיקום");
+          }
+          toast("חיפוש הכתובת נכשל — אפשר לסמן ידנית על המפה");
+          console.warn(err);
+        }
+        return;
+      }
+
+      const rec = upsertCustomerRecord(fields, existing && existing.lat != null ? { lat: existing.lat, lng: existing.lng } : null);
+      saveState();
+      closeForm();
+      renderAll();
+      if (rec.lat != null) selectCustomer(rec.id, { fromMap: false, openPopup: true });
+      else enterPlaceMode(rec.id);
+      toast("הלקוח נשמר");
+    }
+
+    function onManualPlace() {
+      const fields = collectForm();
+      if (!fields.name) {
+        $("formStatus").textContent = "יש למלא שם לקוח לפני הסימון על המפה";
+        $("formStatus").classList.add("error");
+        return;
+      }
+      const existing = state.customers.find(function (x) { return x.id === fields.id; });
+      const rec = upsertCustomerRecord(fields, existing && existing.lat != null ? { lat: existing.lat, lng: existing.lng } : null);
+      saveState();
+      closeForm();
+      renderAll();
+      selectCustomer(rec.id, { fromMap: false, openPopup: false });
+      enterPlaceMode(rec.id);
+    }
+
+    function deleteCustomer(id) {
+      const c = state.customers.find(function (x) { return x.id === id; });
+      if (!c) return;
+      const ok = confirm("למחוק את הלקוח «" + c.name + "»? הפעולה אינה ניתנת לביטול.");
+      if (!ok) return;
+      state.customers = state.customers.filter(function (x) { return x.id !== id; });
+      state.routeIds = state.routeIds.filter(function (x) { return x !== id; });
+      if (state.selectedId === id) state.selectedId = null;
+      if (state.placingId === id) exitPlaceMode();
+      saveState();
+      renderAll();
+      toast("הלקוח נמחק");
+    }
+
+    /* ---------- Import / Export / Demo ---------- */
+    function exportJson() {
+      const payload = {
+        exportedAt: new Date().toISOString(),
+        customers: state.customers,
+        legend: state.legend
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "customers-map-backup.json";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(function () { URL.revokeObjectURL(a.href); }, 500);
+      toast("הקובץ יוצא");
+    }
+
+    function importJsonFile(file) {
+      const reader = new FileReader();
+      reader.onload = function () {
+        try {
+          const data = JSON.parse(reader.result);
+          const list = Array.isArray(data) ? data : data.customers;
+          if (!Array.isArray(list)) throw new Error("missing customers array");
+          const cleaned = list.map(function (c) {
+            if (!c || !c.name) return null;
+            return {
+              id: c.id || uid(),
+              name: String(c.name),
+              address: c.address ? String(c.address) : "",
+              phone: c.phone ? String(c.phone) : "",
+              notes: c.notes ? String(c.notes) : "",
+              color: COLOR_IDS.indexOf(c.color) !== -1 ? c.color : "gray",
+              lat: typeof c.lat === "number" ? c.lat : (c.lat != null ? parseFloat(c.lat) : null),
+              lng: typeof c.lng === "number" ? c.lng : (c.lng != null ? parseFloat(c.lng) : null),
+              createdAt: c.createdAt || Date.now(),
+              updatedAt: Date.now()
+            };
+          }).filter(Boolean);
+          if (!confirm("ייבוא יחליף את רשימת הלקוחות הנוכחית (" + cleaned.length + " לקוחות בקובץ). להמשיך?")) return;
+          state.customers = cleaned;
+          if (data.legend && typeof data.legend === "object") state.legend = data.legend;
+          state.routeIds = [];
+          state.selectedId = null;
+          exitPlaceMode();
+          saveState();
+          renderAll();
+          if (map) map.setView(ISRAEL_CENTER, ISRAEL_ZOOM);
+          toast("הייבוא הושלם");
+        } catch (err) {
+          alert("לא ניתן לייבא את הקובץ. ודא שזה קובץ JSON שיוצא מהאפליקציה.");
+          console.warn(err);
+        }
+      };
+      reader.readAsText(file, "utf-8");
+    }
+
+    function loadDemo() {
+      const have = new Set(state.customers.map(function (c) { return c.id; }));
+      let added = 0;
+      DEMO_CUSTOMERS.forEach(function (d) {
+        if (have.has(d.id)) {
+          const existing = state.customers.find(function (c) { return c.id === d.id; });
+          Object.assign(existing, d, { updatedAt: Date.now() });
+        } else {
+          state.customers.unshift(Object.assign({ createdAt: Date.now(), updatedAt: Date.now() }, d));
+          added += 1;
+        }
+      });
+      saveState();
+      renderAll();
+      if (map) {
+        const layer = L.featureGroup(DEMO_CUSTOMERS.filter(function (d) {
+          return markers[d.id];
+        }).map(function (d) { return markers[d.id]; }));
+        if (layer.getLayers().length) map.fitBounds(layer.getBounds().pad(0.25));
+      }
+      toast(added ? "נטענו " + added + " לקוחות הדגמה" : "לקוחות ההדגמה עודכנו");
+    }
+
+    function openGoogleRoute() {
+      const stops = state.routeIds.map(function (id) {
+        return state.customers.find(function (c) { return c.id === id; });
+      }).filter(function (c) { return c && c.lat != null && c.lng != null; });
+      if (!stops.length) {
+        toast("יש לבחור לפחות לקוח אחד עם מיקום על המפה");
+        return;
+      }
+      if (stops.length > MAX_ROUTE_STOPS) {
+        alert("נבחרו " + stops.length + " עצירות, אך Google Maps מאפשר עד כ־" + MAX_ROUTE_STOPS + " עצירות בקישור אחד. יש לצמצם את הבחירה.");
+        return;
+      }
+      const path = stops.map(function (c) { return c.lat + "," + c.lng; }).join("/");
+      const url = "https://www.google.com/maps/dir/" + path;
+      window.open(url, "_blank", "noopener");
+    }
+
+    /* ---------- Wire up ---------- */
+    function bind() {
+      $("lockForm").addEventListener("submit", onLockSubmit);
+      $("btnAdd").addEventListener("click", function () { openForm(null); });
+      $("btnModalClose").addEventListener("click", closeForm);
+      $("btnCancelForm").addEventListener("click", closeForm);
+      $("modalBackdrop").addEventListener("click", function (e) {
+        if (e.target === $("modalBackdrop")) closeForm();
+      });
+      $("customerForm").addEventListener("submit", onFormSubmit);
+      $("btnManualPlace").addEventListener("click", onManualPlace);
+      $("searchInput").addEventListener("input", function () {
+        state.search = $("searchInput").value;
+        renderAll();
+      });
+      $("btnExport").addEventListener("click", exportJson);
+      $("btnImport").addEventListener("click", function () { $("importFile").click(); });
+      $("importFile").addEventListener("change", function () {
+        const f = $("importFile").files && $("importFile").files[0];
+        $("importFile").value = "";
+        if (f) importJsonFile(f);
+      });
+      $("btnDemo").addEventListener("click", loadDemo);
+      $("btnSelectVisible").addEventListener("click", function () {
+        visibleCustomers().forEach(function (c) {
+          if (c.lat == null) return;
+          if (state.routeIds.indexOf(c.id) === -1) state.routeIds.push(c.id);
+        });
+        renderList();
+      });
+      $("btnClearSelection").addEventListener("click", function () {
+        state.routeIds = [];
+        renderList();
+      });
+      $("btnRoute").addEventListener("click", openGoogleRoute);
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") {
+          if ($("modalBackdrop").classList.contains("open")) closeForm();
+          else if (state.placingId) { exitPlaceMode(); renderList(); }
+        }
+      });
+    }
+
+    /* Exposed for tests (no secrets) */
+    window.__customersApp = {
+      tryUnlock: tryUnlock,
+      loadDemo: loadDemo,
+      getState: function () { return state; },
+      selectCustomer: selectCustomer,
+      cycleColor: function (id) {
+        const c = state.customers.find(function (x) { return x.id === id; });
+        if (!c) return null;
+        c.color = nextColorId(c.color);
+        c.updatedAt = Date.now();
+        saveState();
+        renderAll();
+        return c.color;
+      }
+    };
+
+    loadState();
+    renderLegend();
+    renderColorFilters();
+    renderList();
+    bind();
+    if (sessionStorage.getItem(SESSION_KEY) === "1") showApp();
+    else $("lockPassword").focus();
+  })();
+  </script>
+
+  <script>
+    if ((location.protocol === "http:" || location.protocol === "https:") && "serviceWorker" in navigator) {
+      window.addEventListener("load", function () {
+        navigator.serviceWorker.register("./sw.js").catch(function (err) {
+          console.warn("SW registration failed", err);
+        });
+      });
+    }
+  </script>
+</body>
+</html>
