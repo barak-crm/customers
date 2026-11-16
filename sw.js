@@ -1,7 +1,7 @@
-/* customers-map service worker
+/* customers-map service worker (cloud-sync edition)
  * Cache version: bump CACHE_VERSION to refresh the app shell after a release.
  */
-const CACHE_VERSION = "v1";
+const CACHE_VERSION = "v6-mobile-first";
 const PREFIX = "customers-map-";
 const SHELL_CACHE = PREFIX + "shell-" + CACHE_VERSION;
 const CDN_CACHE = PREFIX + "cdn-" + CACHE_VERSION;
@@ -40,6 +40,24 @@ self.addEventListener("activate", function (event) {
 
 function isNominatim(url) {
   return url.hostname === "nominatim.openstreetmap.org";
+}
+
+function isFirebaseOrGoogleApis(url) {
+  var host = url.hostname;
+  // Never cache Firebase SDK, Auth, Firestore, or other Google API backends.
+  // Keep caching fonts.googleapis.com / fonts.gstatic.com as before (see isFontCdn).
+  if (host === "fonts.googleapis.com" || host === "fonts.gstatic.com") return false;
+  if (host === "www.gstatic.com" || host === "gstatic.com" || host.endsWith(".gstatic.com")) {
+    return url.pathname.indexOf("/firebasejs/") !== -1 || url.pathname.indexOf("/firebase") !== -1;
+  }
+  return host === "googleapis.com" ||
+    host.endsWith(".googleapis.com") ||
+    host === "firebase.google.com" ||
+    host.endsWith(".firebaseio.com") ||
+    host.endsWith(".firebasestorage.app") ||
+    host.endsWith(".firebaseapp.com") ||
+    host.endsWith(".cloudfunctions.net") ||
+    host === "firebasestorage.googleapis.com";
 }
 
 function isLeafletCdn(url) {
@@ -117,6 +135,9 @@ self.addEventListener("fetch", function (event) {
 
   // Never cache geocoding — always hit the network (or fail).
   if (isNominatim(url)) return;
+
+  // Never cache Firebase / Google APIs — Auth and Firestore must be live.
+  if (isFirebaseOrGoogleApis(url)) return;
 
   if (isLeafletCdn(url) || isFontCdn(url)) {
     event.respondWith(cacheFirst(request, CDN_CACHE));

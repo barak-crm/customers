@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="he" dir="rtl">
+<!-- build: design01-turquoise-geocode v6-mobile-first storage:element-customers-map-v1 -->
+<html lang="he" dir="rtl" data-build="design01-turquoise-geocode-v6-mobile-first">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>ניהול לקוחות — מפה ומסלולים</title>
-  <meta name="theme-color" content="#0f6e6e" />
+  <meta name="theme-color" content="#0F766E" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -14,117 +15,146 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230f6e6e'/%3E%3Ctext x='16' y='21' font-size='11' text-anchor='middle' fill='white' font-family='Arial,sans-serif' font-weight='700'%3EEC%3C/text%3E%3C/svg%3E" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@500;600;700&family=Assistant:wght@400;500;600;700&display=swap&subset=hebrew" rel="stylesheet" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
   <style>
     :root {
-      --bg: #eef2f6;
+      --bg: #F4F7F7;
       --surface: #ffffff;
-      --ink: #1c2333;
-      --muted: #5b6577;
-      --line: #e2e8f0;
-      --primary: #0f6e6e;
-      --primary-dark: #0b5555;
-      --primary-soft: #e6f4f4;
+      --ink: #0F1F1E;
+      --muted: #5B6B6A;
+      --line: #E2E9E8;
+      --primary: #0F766E;
+      --primary-dark: #0B5E58;
+      --primary-soft: #E6F4F2;
       --danger: #c62828;
       --danger-soft: #fdecea;
       --warn: #b45309;
       --warn-soft: #fff7ed;
-      --shadow: 0 8px 24px rgba(16, 24, 40, 0.08);
-      --sidebar-w: 400px;
-      --header-h: 60px;
-      --radius: 12px;
+      --ok: #16A34A;
+      --shadow: 0 1px 2px rgba(15,31,30,.06), 0 6px 20px rgba(15,31,30,.06);
+      --sidebar-w: 440px;
+      --header-h: 72px;
+      --radius: 18px;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-right: env(safe-area-inset-right, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --safe-left: env(safe-area-inset-left, 0px);
+      --bottom-nav-h: 64px;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
     html, body {
       height: 100%;
+      height: 100dvh;
+      max-width: 100%;
+      overflow-x: hidden;
       font-family: "Assistant", "Segoe UI", "Arial Hebrew", Arial, sans-serif;
       color: var(--ink);
       background: var(--bg);
+      font-size: 16px;
+      line-height: 1.45;
+      -webkit-font-smoothing: antialiased;
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+    }
+
+    h1, h2, h3, .rb, .brand h1, .row-name, .story-name, .sheet header h2, .modal header h2 {
+      font-family: "Rubik", "Assistant", sans-serif;
     }
 
     button, input, textarea, select { font-family: inherit; }
 
-    /* Layout is LTR so the list stays on the LEFT and the map on the RIGHT,
-       even though all text is RTL Hebrew. */
     .app {
-      direction: ltr;
+      direction: rtl;
       display: flex;
       flex-direction: column;
       height: 100%;
       min-height: 100vh;
+      min-height: 100dvh;
+      max-width: 100%;
+      overflow-x: hidden;
+      background: var(--bg);
     }
 
-    .app-header, .sidebar, .modal, .lock-screen, .toast {
+    .app-header, .feed-section, .sidebar, .modal, .lock-screen, .toast, .sheet, .header-menu {
       direction: rtl;
     }
 
     .app-header {
-      height: var(--header-h);
       flex-shrink: 0;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      padding: 0 16px;
+      min-height: 64px;
+      height: auto;
+      padding: 12px 20px;
       background: var(--surface);
       border-bottom: 1px solid var(--line);
-      box-shadow: 0 1px 0 rgba(16, 24, 40, 0.03);
-      z-index: 20;
+      z-index: 500;
+      position: sticky;
+      top: 0;
     }
 
     .brand {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
       min-width: 0;
     }
 
     .brand-mark {
-      width: 34px;
-      height: 34px;
-      border-radius: 9px;
-      background: linear-gradient(145deg, #148383, #0b4f4f);
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      background: var(--primary);
       color: #fff;
       display: grid;
       place-items: center;
+      font-family: "Rubik", sans-serif;
       font-weight: 700;
-      font-size: 13px;
+      font-size: 15px;
       flex-shrink: 0;
     }
 
     .brand h1 {
-      font-size: 17px;
+      font-size: 21px;
       font-weight: 700;
       line-height: 1.15;
     }
 
     .brand p {
-      font-size: 12px;
+      font-size: 13.5px;
       color: var(--muted);
       font-weight: 500;
     }
 
     .header-actions {
       display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      justify-content: flex-start;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
     }
 
     .btn {
       appearance: none;
-      border: 1px solid var(--line);
+      border: 1.5px solid var(--line);
       background: var(--surface);
       color: var(--ink);
-      border-radius: 9px;
-      padding: 7px 12px;
-      font-size: 13.5px;
-      font-weight: 600;
+      border-radius: 14px;
+      padding: 0 16px;
+      min-height: 44px;
+      font-size: 15px;
+      font-weight: 700;
       cursor: pointer;
       line-height: 1.3;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
       transition: background 0.15s, border-color 0.15s, transform 0.1s;
     }
     .btn:hover { background: #f8fafc; }
@@ -145,191 +175,473 @@
     }
     .btn-danger:hover { background: #fad2d0; }
 
-    .btn-ghost { background: transparent; }
+    .btn-ghost { background: transparent; border-color: transparent; }
+    .btn-sm { padding: 0 10px; min-height: 36px; font-size: 13.5px; border-radius: 12px; }
 
-    .btn-sm { padding: 4px 8px; font-size: 12.5px; border-radius: 7px; }
+    .btn-map-toggle {
+      background: var(--primary);
+      border: 1.5px solid var(--primary);
+      color: #fff;
+      border-radius: 12px;
+      min-height: 44px;
+      font-weight: 700;
+    }
+    .btn-map-toggle[aria-pressed="true"] {
+      background: #fff;
+      border-color: var(--line);
+      color: var(--primary-dark);
+    }
+
+    .icon-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 1.5px solid var(--line);
+      background: #fff;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      color: var(--ink);
+      flex-shrink: 0;
+    }
+    .icon-btn:hover { background: var(--primary-soft); }
+    .icon-btn[aria-expanded="true"] { background: var(--primary-soft); border-color: var(--primary); }
+
+    .header-menu-wrap { position: relative; }
+    .header-menu {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      min-width: 220px;
+      background: #fff;
+      border: 1.5px solid var(--line);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      padding: 8px;
+      z-index: 800;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .header-menu[hidden] { display: none !important; }
+    .header-menu .btn { width: 100%; justify-content: flex-start; min-height: 44px; border: 0; background: transparent; border-radius: 12px; }
+    .header-menu .btn:hover { background: var(--primary-soft); }
+
+    .user-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .user-chip[hidden] { display: none !important; }
+    .user-email {
+      max-width: 160px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      direction: ltr;
+      unicode-bidi: isolate;
+    }
+    .user-av {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-family: "Rubik", sans-serif;
+      font-weight: 600;
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+
+    .sync-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      padding: 4px 10px 4px 8px;
+      border-radius: 999px;
+      background: #F0FDFA;
+      max-width: 260px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .sync-pill::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #22C55E;
+      box-shadow: 0 0 0 3px #DCFCE7;
+      flex-shrink: 0;
+    }
+    .sync-pill.warn { background: var(--warn-soft); color: var(--warn); }
+    .sync-pill.warn::before { background: #F59E0B; box-shadow: 0 0 0 3px #FEF3C7; }
+    .sync-pill.danger { background: var(--danger-soft); color: var(--danger); }
+    .sync-pill.danger::before { background: var(--danger); box-shadow: 0 0 0 3px #FECACA; }
+    .sync-pill[hidden] { display: none !important; }
+
+    /* Stories / feed — full width under the header */
+    .feed-section {
+      flex-shrink: 0;
+      background: var(--surface);
+      border-bottom: 1px solid var(--line);
+      padding: 14px 20px 16px;
+      color: var(--ink);
+    }
+    .feed-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .feed-title { font-family: "Rubik", sans-serif; font-size: 17px; font-weight: 700; }
+    .feed-sub { font-size: 13.5px; color: var(--muted); font-weight: 500; }
+    .feed-track {
+      display: flex;
+      gap: 16px;
+      overflow-x: auto;
+      padding: 2px 2px 4px;
+      scrollbar-width: none;
+    }
+    .feed-track::-webkit-scrollbar { display: none; }
+    .story-card {
+      flex: 0 0 auto;
+      width: 84px;
+      border: 0;
+      background: transparent;
+      color: inherit;
+      cursor: pointer;
+      text-align: center;
+      font-family: inherit;
+      padding: 0;
+    }
+    .story-ring {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      padding: 3px;
+      margin: 0 auto 6px;
+      background: var(--line);
+      transition: transform 0.15s;
+    }
+    .story-card.fresh .story-ring {
+      background: conic-gradient(var(--primary), #5EEAD4, var(--primary));
+    }
+    .story-card:hover .story-ring { transform: translateY(-1px); }
+    .story-avatar {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      border: 3px solid #fff;
+      display: grid;
+      place-items: center;
+      font-family: "Rubik", sans-serif;
+      font-weight: 700;
+      font-size: 20px;
+      color: #fff;
+    }
+    .story-name, .story-date {
+      display: block;
+      width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .story-name { font-size: 13px; font-weight: 700; line-height: 1.2; }
+    .story-date { font-size: 12px; color: var(--muted); font-weight: 500; margin-top: 1px; }
+    .feed-empty {
+      background: var(--bg);
+      border: 1.5px dashed var(--line);
+      border-radius: 16px;
+      padding: 16px 12px;
+      text-align: center;
+    }
+    .feed-empty-title { font-weight: 700; font-size: 14.5px; }
+    .feed-empty-sub { font-size: 13px; color: var(--muted); margin-top: 4px; line-height: 1.45; }
 
     .app-body {
       flex: 1;
-      display: flex;
+      display: grid;
+      grid-template-columns: var(--sidebar-w) 1fr;
       min-height: 0;
-      direction: ltr;
+      direction: rtl;
     }
 
     .sidebar {
-      width: var(--sidebar-w);
-      flex-shrink: 0;
-      background: var(--surface);
-      border-right: 1px solid var(--line);
+      width: auto;
+      min-width: 0;
+      min-height: 0;
+      background: var(--bg);
+      border-left: 1px solid var(--line);
       display: flex;
       flex-direction: column;
-      min-height: 0;
     }
 
     .sidebar-top {
-      padding: 12px 14px 10px;
-      border-bottom: 1px solid var(--line);
+      padding: 16px 20px 8px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 12px;
+      flex-shrink: 0;
     }
 
     .search-wrap { position: relative; }
-
     .search-wrap input {
       width: 100%;
-      border: 1px solid var(--line);
-      background: #f8fafc;
-      border-radius: 10px;
-      padding: 9px 12px 9px 12px;
-      font-size: 14px;
+      height: 52px;
+      border: 1.5px solid var(--line);
+      background: #fff;
+      border-radius: 16px;
+      padding: 0 48px 0 16px;
+      font-size: 17px;
+      font-weight: 500;
       outline: none;
       color: var(--ink);
+      box-shadow: var(--shadow);
     }
     .search-wrap input:focus {
       border-color: var(--primary);
-      background: #fff;
-      box-shadow: 0 0 0 3px rgba(15, 110, 110, 0.15);
+      box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.15);
+    }
+    .search-wrap .search-icon {
+      position: absolute;
+      right: 16px;
+      top: 15px;
+      width: 22px;
+      height: 22px;
+      color: var(--muted);
+      pointer-events: none;
     }
 
     .filters-row {
       display: flex;
       align-items: center;
       gap: 8px;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
+      min-width: 0;
     }
-
     .filters-label {
-      font-size: 12px;
+      font-size: 13px;
       color: var(--muted);
       font-weight: 600;
+      flex-shrink: 0;
     }
-
-    .color-filters { display: flex; gap: 5px; flex-wrap: wrap; }
+    .color-filters {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      padding: 2px 0;
+      flex: 1;
+    }
+    .color-filters::-webkit-scrollbar { display: none; }
 
     .color-chip {
-      width: 20px;
-      height: 20px;
-      border-radius: 6px;
-      border: 2px solid #fff;
-      box-shadow: 0 0 0 1px rgba(0,0,0,0.18);
+      flex: 0 0 auto;
+      min-height: 40px;
+      padding: 0 14px;
+      border-radius: 999px;
+      border: 1.5px solid var(--line);
+      background: #fff;
+      box-shadow: none;
       cursor: pointer;
-      padding: 0;
-      opacity: 0.28;
-      transform: scale(0.92);
-      transition: opacity 0.15s, transform 0.15s;
+      opacity: 1;
+      transform: none;
+      font-weight: 600;
+      font-size: 14.5px;
+      color: var(--ink);
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      width: auto;
+      height: auto;
     }
-    .color-chip.active { opacity: 1; transform: scale(1); }
+    .color-chip i, .color-chip .chip-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+    .color-chip { opacity: 0.45; }
+    .color-chip.active {
+      opacity: 1;
+      transform: none;
+      border-color: var(--ink);
+      background: #fff;
+      color: var(--ink);
+    }
 
     .legend {
-      background: #f8fafc;
-      border: 1px solid var(--line);
-      border-radius: 10px;
-      padding: 8px 10px;
+      background: #fff;
+      border: 1.5px solid var(--line);
+      border-radius: 14px;
+      padding: 8px 12px;
     }
     .legend summary {
       cursor: pointer;
-      font-size: 13px;
+      font-size: 13.5px;
       font-weight: 600;
       color: var(--muted);
       list-style: none;
     }
     .legend summary::-webkit-details-marker { display: none; }
-    .legend-grid {
-      display: grid;
-      gap: 6px;
-      margin-top: 8px;
-    }
-    .legend-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
+    .legend-grid { display: grid; gap: 6px; margin-top: 8px; }
+    .legend-row { display: flex; align-items: center; gap: 8px; }
     .legend-swatch {
-      width: 14px;
-      height: 14px;
-      border-radius: 4px;
-      flex-shrink: 0;
+      width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0;
       box-shadow: 0 0 0 1px rgba(0,0,0,0.12);
     }
     .legend-row input {
       flex: 1;
-      border: 1px solid var(--line);
-      border-radius: 6px;
-      padding: 4px 8px;
-      font-size: 13px;
+      border: 1.5px solid var(--line);
+      border-radius: 10px;
+      padding: 6px 10px;
+      font-size: 13.5px;
       background: #fff;
     }
+
+    .list-toolbar {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 0 20px 10px;
+      background: transparent;
+      border-bottom: 0;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--muted);
+    }
+    .list-toolbar .count-num { color: var(--ink); font-family: "Rubik", sans-serif; font-weight: 700; font-size: 16px; }
 
     .list-wrap {
       flex: 1;
       overflow-y: auto;
       min-height: 0;
+      padding: 4px 20px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
 
     .empty-state {
       text-align: center;
       color: var(--muted);
       padding: 36px 20px;
-      font-size: 14px;
+      font-size: 14.5px;
       line-height: 1.6;
     }
 
     .customer-row {
-      display: grid;
-      grid-template-columns: auto auto 1fr auto;
-      gap: 8px;
-      align-items: start;
-      padding: 10px 14px;
-      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      min-height: 76px;
+      border: 1.5px solid transparent;
+      border-bottom: 1.5px solid transparent;
       cursor: pointer;
       background: #fff;
-      transition: background 0.12s;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      transition: border-color 0.15s;
+      grid-template-columns: none;
     }
-    .customer-row:hover { background: #f8fafc; }
+    .customer-row:hover { border-color: #BFE3DE; background: #fff; }
     .customer-row.selected {
-      background: var(--primary-soft);
-      box-shadow: inset 3px 0 0 var(--primary);
+      background: #fff;
+      box-shadow: var(--shadow), 0 0 0 2px var(--primary);
+      border-color: var(--primary);
     }
-    .customer-row.placing {
-      background: var(--warn-soft);
-    }
+    .customer-row.placing { background: var(--warn-soft); }
 
-    .row-check { margin-top: 3px; accent-color: var(--primary); width: 16px; height: 16px; cursor: pointer; }
+    .row-check { accent-color: var(--primary); width: 16px; height: 16px; cursor: pointer; flex-shrink: 0; margin: 0; }
 
-    .color-sq {
-      width: 18px;
-      height: 18px;
-      border-radius: 4px;
-      margin-top: 2px;
+    .row-ava {
+      flex: 0 0 48px;
+      width: 48px;
+      height: 48px;
+      border-radius: 15px;
+      display: grid;
+      place-items: center;
+      font-family: "Rubik", sans-serif;
+      font-weight: 700;
+      font-size: 17px;
       border: none;
       cursor: pointer;
-      box-shadow: 0 0 0 1px rgba(0,0,0,0.18);
+      box-shadow: none;
       padding: 0;
-      flex-shrink: 0;
     }
-    .color-sq:hover { outline: 2px solid rgba(15, 110, 110, 0.45); outline-offset: 1px; }
+    .row-ava:hover { outline: 2px solid rgba(15, 118, 110, 0.35); outline-offset: 1px; }
 
-    .row-main { min-width: 0; }
-    .row-name { font-weight: 700; font-size: 14.5px; line-height: 1.3; }
+    .row-main { min-width: 0; flex: 1; }
+    .row-name {
+      font-weight: 600;
+      font-size: 17px;
+      line-height: 1.3;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
     .row-addr, .row-meta {
-      font-size: 12.5px;
+      font-size: 14.5px;
       color: var(--muted);
       margin-top: 2px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .row-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-weight: 700;
+      font-size: 13px;
+      padding: 2px 9px;
+      border-radius: 999px;
     }
     .row-actions {
       display: flex;
-      flex-direction: column;
-      gap: 4px;
+      flex-direction: row;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
     }
+    .call-btn {
+      flex: 0 0 48px;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--primary-soft);
+      color: var(--primary);
+      display: grid;
+      place-items: center;
+      border: 0;
+      text-decoration: none;
+      padding: 0;
+    }
+    .call-btn:hover { background: #d7efec; }
+    .call-btn svg { width: 22px; height: 22px; }
 
     .sidebar-footer {
+      flex-shrink: 0;
       border-top: 1px solid var(--line);
-      padding: 10px 14px 12px;
-      background: #fbfcfd;
+      padding: 10px 16px 14px;
+      background: var(--surface);
       display: flex;
       flex-direction: column;
       gap: 8px;
@@ -344,21 +656,63 @@
     }
     .footer-actions { display: flex; gap: 6px; flex-wrap: wrap; }
 
-    .map-pane {
+    .map-column {
       flex: 1;
       min-width: 0;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
       position: relative;
-      background: #d9e2ec;
+      background: var(--bg);
     }
-    #map { height: 100%; width: 100%; }
+    .map-column .map-pane, .map-pane {
+      flex: 1;
+      min-width: 0;
+      min-height: 0;
+      height: auto;
+      position: relative;
+      background: transparent;
+      padding: 16px;
+    }
+    #map {
+      height: 100%;
+      width: 100%;
+      border-radius: 22px;
+      box-shadow: var(--shadow);
+      direction: ltr;
+      overflow: hidden;
+      z-index: 1;
+    }
+
+    .app-body.map-hidden {
+      grid-template-columns: 1fr;
+    }
+    .app-body.map-hidden .map-column { display: none; }
+    .app-body.map-hidden .sidebar {
+      width: 100%;
+      max-width: 100%;
+      min-height: 0;
+      height: auto;
+      flex: 1;
+      border-left: none;
+    }
+    .app-body.map-hidden #customerList {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      align-content: start;
+    }
+    .app-body.map-hidden #customerList .empty-state,
+    .app-body.map-hidden #customerList .load-more-wrap {
+      grid-column: 1 / -1;
+    }
 
     .map-hint {
       position: absolute;
-      top: 12px;
+      top: 28px;
       left: 50%;
       transform: translateX(-50%);
       z-index: 1000;
-      background: #1c2333;
+      background: #0F1F1E;
       color: #fff;
       padding: 8px 14px;
       border-radius: 999px;
@@ -367,7 +721,7 @@
       box-shadow: var(--shadow);
       display: none;
       white-space: nowrap;
-      max-width: calc(100% - 24px);
+      max-width: calc(100% - 48px);
       overflow: hidden;
       text-overflow: ellipsis;
       direction: rtl;
@@ -375,29 +729,46 @@
     .map-hint.visible { display: block; }
 
     .leaflet-popup-content { direction: rtl; text-align: right; margin: 10px 12px; }
-    .popup-title { font-weight: 700; font-size: 15px; margin-bottom: 2px; }
+    .popup-title { font-family: "Rubik", sans-serif; font-weight: 700; font-size: 15px; margin-bottom: 2px; }
     .popup-line { font-size: 13px; color: #445; margin: 2px 0; }
     .popup-actions { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
-    .popup-actions a { text-decoration: none; }
-
-    .marker-dot {
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      border: 2px solid #fff;
-      box-shadow: 0 0 0 1px rgba(0,0,0,0.25), 0 1px 4px rgba(0,0,0,0.3);
+    .popup-line a.popup-phone, a.detail-phone {
+      color: var(--primary);
+      font-weight: 700;
+      text-decoration: none;
     }
-    .marker-dot.selected {
-      width: 20px;
-      height: 20px;
-      box-shadow: 0 0 0 3px rgba(15, 110, 110, 0.45), 0 1px 6px rgba(0,0,0,0.35);
-    }
+    .popup-line a.popup-phone:hover, a.detail-phone:hover { text-decoration: underline; }
 
-    /* Lock screen */
+    .load-more-wrap { padding: 8px 0 16px; display: flex; justify-content: center; }
+
+    /* FAB */
+    .fab {
+      position: fixed;
+      left: 20px;
+      bottom: 20px;
+      z-index: 600;
+      height: 60px;
+      padding: 0 24px 0 22px;
+      border-radius: 20px;
+      background: var(--primary);
+      border: 0;
+      color: #fff;
+      font-family: "Rubik", sans-serif;
+      font-weight: 700;
+      font-size: 17px;
+      display: none;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 10px 30px rgba(15, 118, 110, 0.4);
+      cursor: pointer;
+    }
+    .fab:hover { background: var(--primary-dark); }
+
+    /* Lock */
     .lock-screen {
       position: fixed;
       inset: 0;
-      background: linear-gradient(160deg, #0b3d3d 0%, #102030 60%, #1a2740 100%);
+      background: linear-gradient(160deg, #E6F4F2, #F4F7F7 50%, #fff);
       z-index: 2000;
       display: flex;
       align-items: center;
@@ -408,95 +779,193 @@
     .lock-card {
       width: min(400px, 100%);
       background: #fff;
-      border-radius: 16px;
+      border-radius: 24px;
+      box-shadow: var(--shadow);
       padding: 28px 24px 24px;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.3);
     }
-    .lock-card h2 { font-size: 22px; margin: 8px 0 4px; }
-    .lock-card .sub { color: var(--muted); margin-bottom: 18px; font-size: 14px; }
-    .lock-card label { display: block; font-weight: 600; font-size: 13px; margin-bottom: 6px; }
-    .lock-card input[type="password"] {
+    .lock-card h2 { font-family: "Rubik", sans-serif; font-size: 24px; margin: 14px 0 6px; }
+    .lock-card .sub { color: var(--muted); margin-bottom: 16px; }
+    .lock-card label { display: block; font-size: 13.5px; font-weight: 700; margin-bottom: 6px; }
+    .lock-card input[type="password"],
+    .lock-card input[type="email"],
+    .lock-card input[type="text"] {
       width: 100%;
-      border: 1px solid var(--line);
-      border-radius: 10px;
-      padding: 10px 12px;
+      height: 48px;
+      border: 1.5px solid var(--line);
+      border-radius: 14px;
+      padding: 0 12px;
       font-size: 16px;
       outline: none;
       margin-bottom: 8px;
+      background: #fff;
     }
-    .lock-card input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(15, 110, 110, 0.15); }
-    .lock-error { color: var(--danger); font-size: 13px; min-height: 18px; margin-bottom: 8px; font-weight: 600; }
-    .lock-card .btn-primary { width: 100%; padding: 10px; font-size: 15px; }
+    .lock-card input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.15);
+    }
+    .lock-error { color: var(--danger); font-weight: 600; min-height: 20px; font-size: 13.5px; margin-bottom: 8px; }
+    .lock-banner {
+      background: var(--warn-soft);
+      color: var(--warn);
+      border: 1px solid #f5d0a8;
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 13.5px;
+      line-height: 1.5;
+      margin-bottom: 14px;
+      font-weight: 600;
+    }
+    .lock-banner.hidden { display: none; }
+    .lock-actions { display: flex; flex-direction: column; gap: 8px; }
+    .lock-link {
+      appearance: none;
+      border: 0;
+      background: none;
+      color: var(--primary);
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      padding: 4px 0;
+      text-align: center;
+    }
+    .lock-link:hover { text-decoration: underline; }
+    .lock-link:disabled { opacity: 0.5; cursor: not-allowed; text-decoration: none; }
 
     /* Modal */
-    .modal-backdrop {
+    .modal-backdrop, .sheet-backdrop {
       position: fixed;
       inset: 0;
-      background: rgba(16, 24, 40, 0.45);
+      background: rgba(15, 31, 30, 0.35);
       z-index: 1500;
       display: none;
       align-items: center;
       justify-content: center;
       padding: 16px;
     }
-    .modal-backdrop.open { display: flex; }
-    .modal {
+    .sheet-backdrop { z-index: 1600; }
+    .modal-backdrop.open, .sheet-backdrop.open { display: flex; }
+    .modal, .sheet {
       width: min(480px, 100%);
       background: #fff;
-      border-radius: 16px;
+      border-radius: 24px;
       box-shadow: var(--shadow);
       max-height: calc(100vh - 32px);
       overflow: auto;
+      direction: rtl;
     }
-    .modal header {
+    .modal header, .sheet header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 16px 18px 8px;
+      gap: 10px;
+      padding: 18px 22px 10px;
+      position: sticky;
+      top: 0;
+      background: #fff;
+      z-index: 1;
     }
-    .modal header h2 { font-size: 18px; }
-    .modal .form { padding: 8px 18px 18px; display: flex; flex-direction: column; gap: 10px; }
-    .field label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+    .modal header h2, .sheet header h2 { font-size: 22px; line-height: 1.2; }
+    .modal .form { padding: 8px 22px 22px; display: flex; flex-direction: column; gap: 12px; }
+    .field label { display: block; font-size: 14px; font-weight: 700; font-family: "Rubik", sans-serif; margin-bottom: 6px; }
     .field input, .field textarea, .field select {
       width: 100%;
-      border: 1px solid var(--line);
-      border-radius: 9px;
-      padding: 8px 10px;
-      font-size: 14px;
+      border: 1.5px solid var(--line);
+      border-radius: 14px;
+      padding: 10px 12px;
+      font-size: 16px;
       outline: none;
-      background: #fff;
+      background: #FBFDFD;
     }
-    .field textarea { min-height: 70px; resize: vertical; }
+    .field textarea { min-height: 120px; resize: vertical; font-size: 16.5px; line-height: 1.55; }
     .field input:focus, .field textarea:focus, .field select:focus {
       border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(15, 110, 110, 0.15);
+      box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.15);
+      background: #fff;
     }
     .color-picker { display: flex; gap: 6px; flex-wrap: wrap; }
     .color-option {
-      width: 26px;
-      height: 26px;
-      border-radius: 7px;
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
       border: 2px solid transparent;
       cursor: pointer;
       box-shadow: 0 0 0 1px rgba(0,0,0,0.15);
     }
     .color-option.chosen { border-color: var(--ink); box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--ink); }
     .form-actions { display: flex; gap: 8px; justify-content: flex-start; flex-wrap: wrap; margin-top: 6px; }
-    .form-status { font-size: 13px; color: var(--muted); min-height: 18px; }
+    .form-status { font-size: 13.5px; color: var(--muted); min-height: 18px; }
     .form-status.error { color: var(--danger); font-weight: 600; }
+
+    .geo-status {
+      margin-top: 8px;
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--muted);
+      min-height: 18px;
+    }
+    .geo-status.busy { color: var(--primary-dark); }
+    .geo-status.ok { color: var(--ok); }
+    .geo-status.warn { color: var(--warn); }
+    .geo-results {
+      margin-top: 8px;
+      border: 1.5px solid var(--line);
+      border-radius: 14px;
+      overflow: hidden;
+      background: #fff;
+    }
+    .geo-results[hidden], .geo-status[hidden] { display: none !important; }
+    .geo-option {
+      display: block;
+      width: 100%;
+      text-align: right;
+      padding: 10px 12px;
+      border: 0;
+      background: #fff;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--ink);
+      border-bottom: 1px solid var(--line);
+    }
+    .geo-option:last-child { border-bottom: 0; }
+    .geo-option:hover, .geo-option[aria-selected="true"] { background: var(--primary-soft); }
+
+    .sheet-body { padding: 4px 22px 12px; display: flex; flex-direction: column; gap: 0; }
+    .detail-row {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .detail-row:last-child { border-bottom: none; }
+    .detail-label { font-size: 13px; font-weight: 600; color: var(--muted); }
+    .detail-value { font-size: 16.5px; font-weight: 600; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+    .detail-value.muted { color: var(--muted); font-weight: 500; }
+    .detail-phone { color: var(--primary-dark); font-weight: 700; text-decoration: none; font-size: 17px; }
+    .detail-color { display: inline-flex; align-items: center; gap: 8px; }
+    .detail-swatch { width: 14px; height: 14px; border-radius: 50%; box-shadow: 0 0 0 1px rgba(0,0,0,0.12); }
+    .sheet-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-start;
+      flex-wrap: wrap;
+      padding: 8px 22px 22px;
+    }
+    a.btn { text-decoration: none; display: inline-flex; align-items: center; }
 
     .toast {
       position: fixed;
       bottom: 18px;
       left: 50%;
       transform: translateX(-50%) translateY(20px);
-      background: #1c2333;
+      background: #0F1F1E;
       color: #fff;
       padding: 10px 16px;
-      border-radius: 10px;
+      border-radius: 12px;
       font-size: 14px;
       font-weight: 600;
-      z-index: 3000;
+      z-index: 1200;
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.2s, transform 0.2s;
@@ -505,30 +974,391 @@
     }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+
+    input, textarea, select { font-size: 16px; }
+    button, a.btn, .call-btn, .icon-btn, .sheet-close, .bottom-nav-btn, .bottom-nav-add, .map-close-btn {
+      touch-action: manipulation;
+    }
+
+    .sheet-handle {
+      display: none;
+      width: 40px;
+      height: 5px;
+      border-radius: 99px;
+      background: #D5DEDD;
+      margin: 8px auto 0;
+      flex-shrink: 0;
+    }
+    .sheet-close {
+      appearance: none;
+      width: 48px;
+      height: 48px;
+      min-width: 48px;
+      min-height: 48px;
+      border-radius: 50%;
+      border: 1.5px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      padding: 0;
+    }
+    .sheet-close:active { background: var(--primary-soft); }
+    .form-scroll { display: flex; flex-direction: column; gap: 12px; }
+    .map-close-btn { display: none; }
+    .bottom-nav { display: none; }
+
+    @media (min-width: 801px) {
+      .fab { display: none !important; }
+      .bottom-nav, .map-close-btn, .sheet-handle { display: none !important; }
+    }
+
     @media (max-width: 800px) {
-      .app-body { flex-direction: column; }
+      html, body, .app {
+        overflow-x: hidden;
+        max-width: 100%;
+      }
+      .app {
+        padding-bottom: calc(var(--bottom-nav-h) + var(--safe-bottom));
+      }
+      .app.map-open {
+        padding-bottom: 0;
+      }
+
+      .app-header {
+        padding: 8px 16px;
+        padding-top: calc(8px + var(--safe-top));
+        padding-inline-start: calc(16px + var(--safe-right));
+        padding-inline-end: calc(16px + var(--safe-left));
+        min-height: 52px;
+        gap: 8px;
+      }
+      .brand-mark { width: 40px; height: 40px; border-radius: 12px; }
+      .brand h1 { font-size: 18px; }
+      .brand p { display: none; }
+      .header-add { display: none; }
+      .header-actions .header-menu-wrap { display: none; }
+      .user-email { display: none; }
+      .sync-pill {
+        max-width: none;
+        width: 16px;
+        height: 16px;
+        padding: 0;
+        font-size: 0;
+        color: transparent;
+        background: transparent;
+        gap: 0;
+      }
+      .sync-pill::before { width: 10px; height: 10px; }
+      .fab { display: none !important; }
+
+      .header-menu {
+        position: fixed;
+        top: auto;
+        bottom: calc(var(--bottom-nav-h) + var(--safe-bottom) + 8px);
+        left: calc(12px + var(--safe-left));
+        right: calc(12px + var(--safe-right));
+        width: auto;
+        min-width: 0;
+        max-height: min(70vh, 440px);
+        overflow-y: auto;
+        z-index: 850;
+      }
+      .header-menu .btn { min-height: 48px; font-size: 16px; }
+
+      .bottom-nav {
+        display: flex;
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 700;
+        background: #fff;
+        border-top: 1px solid var(--line);
+        padding: 6px 8px calc(6px + var(--safe-bottom));
+        padding-inline-start: calc(8px + var(--safe-right));
+        padding-inline-end: calc(8px + var(--safe-left));
+        gap: 4px;
+        align-items: stretch;
+        justify-content: space-around;
+        min-height: calc(var(--bottom-nav-h) + var(--safe-bottom));
+        box-shadow: 0 -4px 16px rgba(15, 31, 30, 0.06);
+      }
+      body.map-open .bottom-nav { display: none; }
+      .bottom-nav-btn,
+      .bottom-nav-add {
+        appearance: none;
+        border: 0;
+        background: transparent;
+        color: var(--ink);
+        min-height: 48px;
+        min-width: 48px;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+        font-family: "Rubik", "Assistant", sans-serif;
+        font-weight: 700;
+        font-size: 11px;
+        line-height: 1.15;
+        cursor: pointer;
+        border-radius: 14px;
+        padding: 4px 2px;
+      }
+      .bottom-nav-btn[aria-current="page"],
+      .bottom-nav-btn[aria-pressed="true"] { color: var(--primary-dark); background: var(--primary-soft); }
+      .bottom-nav-btn svg { width: 22px; height: 22px; }
+      .bottom-nav-add {
+        flex: 1.35;
+        background: var(--primary);
+        color: #fff;
+        border-radius: 16px;
+        font-size: 12px;
+        min-height: 52px;
+      }
+      .bottom-nav-add .plus { font-size: 20px; line-height: 1; font-weight: 700; }
+
+      .feed-section { padding: 6px 14px 4px; }
+      .feed-title { font-size: 16px; }
+      .story-ring { width: 58px; height: 58px; }
+      .story-card { width: 70px; }
+      .story-avatar { font-size: 16px; }
+
+      .app-body {
+        display: flex;
+        flex-direction: column;
+        grid-template-columns: none;
+        min-width: 0;
+      }
       .sidebar {
         width: 100%;
-        height: 48vh;
-        border-right: none;
-        border-bottom: 1px solid var(--line);
+        height: auto;
+        flex: 1 1 auto;
+        min-height: 0;
+        min-width: 0;
+        border-left: none;
+        overflow: hidden;
       }
-      .map-pane { height: 52vh; min-height: 280px; }
-      .brand p { display: none; }
-      .header-actions .btn { padding: 6px 8px; font-size: 12.5px; }
+      .sidebar-top, .list-toolbar, .sidebar-footer, .feed-section { flex-shrink: 0; }
+      .sidebar-top {
+        padding: 10px 14px 6px;
+        padding-inline-start: calc(14px + var(--safe-right));
+        padding-inline-end: calc(14px + var(--safe-left));
+        gap: 10px;
+        background: var(--bg);
+      }
+      .list-toolbar { padding: 0 14px 8px; }
+      .list-toolbar .btn-map-toggle { display: none; }
+      .list-wrap {
+        min-height: 0;
+        min-width: 0;
+        padding: 4px 14px 8px;
+        padding-inline-start: calc(14px + var(--safe-right));
+        padding-inline-end: calc(14px + var(--safe-left));
+      }
+      .search-wrap input {
+        height: 52px;
+        min-height: 48px;
+        font-size: 16px;
+      }
+      .customer-row .row-actions .btn-sm { display: none; }
+      .customer-row { padding: 12px 12px; gap: 10px; min-width: 0; }
+      .row-name { font-size: 18px; }
+      .row-addr, .row-meta { font-size: 15px; }
+      .call-btn { width: 56px; height: 56px; flex-basis: 56px; }
+      .call-btn svg { width: 26px; height: 26px; }
+      .row-check { width: 22px; height: 22px; flex-basis: 22px; }
+      .row-ava { width: 48px; height: 48px; flex-basis: 48px; }
+
+      .btn, .btn-sm, .icon-btn, .color-chip, .geo-option, .load-more-wrap .btn,
+      .footer-actions .btn, .popup-actions .btn {
+        min-height: 48px;
+      }
+      .btn { font-size: 16px; padding: 0 16px; }
+      .btn-sm { padding: 0 14px; font-size: 15px; border-radius: 14px; }
+      .icon-btn { width: 48px; height: 48px; }
+      .color-chip { min-height: 48px; padding: 0 16px; font-size: 15px; }
+      .color-option { width: 36px; height: 36px; border-radius: 10px; }
+      .geo-option { min-height: 48px; padding: 12px 14px; font-size: 15px; text-align: start; }
+      .filters-row { flex-wrap: nowrap; min-width: 0; }
+      .color-filters {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-x: contain;
+        min-width: 0;
+        padding-bottom: 2px;
+      }
+
+      .field input, .field textarea, .field select {
+        font-size: 16px;
+        min-height: 52px;
+        padding: 12px 14px;
+      }
+      .field textarea { min-height: 128px; }
+      .lock-card input[type="password"],
+      .lock-card input[type="email"],
+      .lock-card input[type="text"] {
+        font-size: 16px;
+        height: 52px;
+        min-height: 52px;
+      }
+      .lock-screen {
+        padding: calc(20px + var(--safe-top)) calc(20px + var(--safe-right)) calc(20px + var(--safe-bottom)) calc(20px + var(--safe-left));
+      }
+      .lock-actions .btn { min-height: 52px; font-size: 17px; }
+
+      /* Full-screen map overlay */
+      .map-column {
+        position: fixed;
+        inset: 0;
+        z-index: 900;
+        background: #0F1F1E;
+        min-height: 100%;
+        min-height: 100dvh;
+        height: 100% !important;
+        flex: none !important;
+        display: flex;
+      }
+      .app-body.map-hidden .map-column { display: none; }
+      .map-pane { padding: 0; flex: 1; min-height: 0; }
+      #map {
+        border-radius: 0;
+        box-shadow: none;
+        height: 100%;
+      }
+      .map-close-btn {
+        display: inline-flex;
+        position: absolute;
+        top: calc(10px + var(--safe-top));
+        inset-inline-start: calc(12px + var(--safe-right));
+        z-index: 1100;
+        min-height: 48px;
+        min-width: 48px;
+        padding: 0 18px;
+        border-radius: 999px;
+        background: #fff;
+        border: 1.5px solid var(--line);
+        color: var(--ink);
+        font-weight: 700;
+        font-size: 16px;
+        box-shadow: var(--shadow);
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        gap: 6px;
+      }
+      .map-hint {
+        top: calc(66px + var(--safe-top));
+        white-space: normal;
+        text-align: center;
+      }
+
+      .app-body.map-hidden { flex-direction: column; }
+      .app-body.map-hidden .sidebar {
+        flex: 1 1 auto;
+        overflow: hidden;
+      }
+      .app-body.map-hidden #customerList {
+        display: flex;
+        grid-template-columns: none;
+      }
+      .app-body.map-hidden .list-wrap { padding-bottom: 8px; }
+      .sidebar-footer {
+        padding: 10px 14px 12px;
+        padding-inline-start: calc(14px + var(--safe-right));
+        padding-inline-end: calc(14px + var(--safe-left));
+      }
+      .footer-actions .btn { flex: 1; }
+
+      .modal-backdrop, .sheet-backdrop {
+        align-items: flex-end;
+        padding: 0;
+        background: rgba(15, 31, 30, 0.4);
+      }
+      .sheet, .modal {
+        width: 100%;
+        max-width: 100%;
+        max-height: calc(100% - var(--safe-top) - 12px);
+        max-height: calc(100dvh - var(--safe-top) - 12px);
+        border-radius: 22px 22px 0 0;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        padding-bottom: var(--safe-bottom);
+      }
+      .sheet-handle { display: block; }
+      .modal header, .sheet header {
+        padding: 8px 16px 10px;
+        flex-shrink: 0;
+      }
+      .modal header h2, .sheet header h2 { font-size: 20px; }
+      .modal .form {
+        padding: 0;
+        gap: 0;
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+      }
+      .form-scroll {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        padding: 8px 20px 28px;
+      }
+      .form-actions, .sheet-actions {
+        position: sticky;
+        bottom: 0;
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 0;
+        padding: 12px 20px calc(12px + var(--safe-bottom));
+        background: #fff;
+        border-top: 1px solid var(--line);
+        z-index: 2;
+      }
+      .form-actions .btn, .sheet-actions .btn, .sheet-actions a.btn {
+        width: 100%;
+        min-height: 48px;
+        justify-content: center;
+      }
+      .sheet-body {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        padding: 4px 20px 12px;
+      }
+
+      .toast {
+        bottom: calc(var(--bottom-nav-h) + var(--safe-bottom) + 12px);
+      }
+      body.map-open .toast { bottom: calc(16px + var(--safe-bottom)); }
     }
+
   </style>
+
 </head>
 <body>
   <div id="lockScreen" class="lock-screen">
     <form class="lock-card" id="lockForm" autocomplete="off">
       <div class="brand-mark" style="margin-inline-start:0;">EC</div>
       <h2>ניהול לקוחות</h2>
-      <p class="sub">הזן סיסמה כדי להיכנס לאפליקציה</p>
+      <p class="sub" id="lockSub">הזן סיסמה כדי להיכנס לאפליקציה</p>
       <label for="lockPassword">סיסמה</label>
       <input id="lockPassword" type="password" autocomplete="current-password" required />
       <div id="lockError" class="lock-error"></div>
-      <button class="btn btn-primary" type="submit">כניסה</button>
+      <div class="lock-actions">
+        <button class="btn btn-primary" type="submit" id="btnSignIn">כניסה</button>
+      </div>
     </form>
   </div>
 
@@ -538,26 +1368,47 @@
         <div class="brand-mark">EC</div>
         <div>
           <h1>ניהול לקוחות</h1>
-          <p>מפה, תיוג צבעים ותכנון מסלול</p>
+          <p>מפה, לקוחות ועדכונים</p>
         </div>
       </div>
       <div class="header-actions">
-        <button class="btn" type="button" id="btnExport">ייצוא JSON</button>
-        <button class="btn" type="button" id="btnImport">ייבוא JSON</button>
+        <span id="syncPill" class="sync-pill" hidden></span>
+        <span id="userChip" class="user-chip" hidden>
+          <span class="user-av" id="userAv">?</span>
+          <span class="user-email" id="userEmail"></span>
+        </span>
+        <div class="header-menu-wrap">
+          <button type="button" class="icon-btn" id="btnHeaderMenu" aria-label="תפריט נוסף" aria-expanded="false" aria-haspopup="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>
+          </button>
+          <div class="header-menu" id="headerMenu" hidden>
+            <button class="btn btn-map-toggle" type="button" id="btnToggleMapHeader" aria-pressed="false" aria-controls="map" aria-expanded="false">פתח מפה</button>
+            <button class="btn" type="button" id="btnExport">ייצוא JSON</button>
+            <button class="btn" type="button" id="btnImport">ייבוא JSON</button>
+            <button class="btn" type="button" id="btnDemo">טען לקוחות הדגמה</button>
+            <button class="btn" type="button" id="btnSignOut">יציאה</button>
+          </div>
+        </div>
         <input type="file" id="importFile" accept="application/json,.json" hidden />
-        <button class="btn" type="button" id="btnDemo">טען לקוחות הדגמה</button>
-        <button class="btn btn-primary" type="button" id="btnAdd">+ לקוח חדש</button>
+        <button class="btn btn-primary header-add" type="button" id="btnAdd">+ לקוח חדש</button>
       </div>
     </header>
 
-    <div class="app-body">
+    <section class="feed-section" id="activityFeed" aria-label="עדכונים אחרונים"></section>
+
+    <div class="app-body map-hidden">
       <aside class="sidebar">
         <div class="sidebar-top">
           <div class="search-wrap">
-            <input id="searchInput" type="search" placeholder="חיפוש לפי שם, כתובת או טלפון..." />
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3-3" stroke-linecap="round"/></svg>
+            <input id="searchInput" type="search" placeholder="חיפוש לפי שם, עיר או טלפון" />
+          </div>
+          <div class="list-toolbar" id="listToolbar">
+            <span id="customerCount">0 לקוחות</span>
+            <button class="btn btn-sm btn-map-toggle" type="button" id="btnToggleMap" aria-pressed="false" aria-controls="map" aria-expanded="false">פתח מפה</button>
           </div>
           <div class="filters-row">
-            <span class="filters-label">סינון צבע:</span>
+            <span class="filters-label">תיוג:</span>
             <div class="color-filters" id="colorFilters"></div>
           </div>
           <details class="legend">
@@ -577,42 +1428,71 @@
           <button class="btn btn-primary" type="button" id="btnRoute">פתח מסלול ב-Google Maps</button>
         </div>
       </aside>
-      <div class="map-pane">
-        <div id="map"></div>
-        <div id="mapHint" class="map-hint"></div>
+      <div class="map-column" id="mapColumn">
+        <div class="map-pane" id="mapPane">
+          <button type="button" class="map-close-btn" id="btnMapClose">סגור מפה</button>
+          <div id="map"></div>
+          <div id="mapHint" class="map-hint"></div>
+        </div>
       </div>
     </div>
   </div>
 
+  <button type="button" class="fab" id="btnFabAdd">+ לקוח חדש</button>
+
+  <nav class="bottom-nav" id="bottomNav" aria-label="ניווט ראשי">
+    <button type="button" class="bottom-nav-btn" id="btnNavList" aria-current="page">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h.01M3 12h.01M3 18h.01"/></svg>
+      <span>רשימה</span>
+    </button>
+    <button type="button" class="bottom-nav-btn" id="btnNavMap" aria-pressed="false" aria-controls="map">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 20l-6 2V6l6-2 6 2 6-2v16l-6 2-6-2z"/><path d="M9 4v16M15 6v16"/></svg>
+      <span class="bottom-nav-map-label">מפה</span>
+    </button>
+    <button type="button" class="bottom-nav-add" id="btnNavAdd">
+      <span class="plus" aria-hidden="true">+</span>
+      <span>לקוח חדש</span>
+    </button>
+    <button type="button" class="bottom-nav-btn" id="btnNavMenu" aria-haspopup="true" aria-expanded="false" aria-controls="headerMenu">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="6" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="18" r="1.8"/></svg>
+      <span>תפריט</span>
+    </button>
+  </nav>
+
   <div class="modal-backdrop" id="modalBackdrop">
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="sheet-handle" aria-hidden="true"></div>
       <header>
         <h2 id="modalTitle">לקוח חדש</h2>
-        <button class="btn btn-ghost btn-sm" type="button" id="btnModalClose">סגירה</button>
+        <button class="sheet-close" type="button" id="btnModalClose" aria-label="סגירה"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
       </header>
       <form class="form" id="customerForm">
-        <input type="hidden" id="fieldId" />
-        <div class="field">
-          <label for="fieldName">שם</label>
-          <input id="fieldName" required maxlength="120" />
+        <div class="form-scroll">
+          <input type="hidden" id="fieldId" />
+          <div class="field">
+            <label for="fieldName">שם</label>
+            <input id="fieldName" required maxlength="120" />
+          </div>
+          <div class="field">
+            <label for="fieldAddress">כתובת</label>
+            <input id="fieldAddress" maxlength="200" placeholder="רחוב, מספר, עיר" autocomplete="street-address" />
+            <div id="geoStatus" class="geo-status" hidden></div>
+            <div id="geoResults" class="geo-results" hidden></div>
+          </div>
+          <div class="field">
+            <label for="fieldPhone">טלפון (אופציונלי)</label>
+            <input id="fieldPhone" type="tel" inputmode="tel" maxlength="30" />
+          </div>
+          <div class="field">
+            <label for="fieldNotes">תיאור / הערות (אופציונלי)</label>
+            <textarea id="fieldNotes" maxlength="2000" rows="5" placeholder="אפשר לכתוב כמה שורות"></textarea>
+          </div>
+          <div class="field">
+            <label>צבע תיוג</label>
+            <div class="color-picker" id="formColors"></div>
+          </div>
+          <div class="form-status" id="formStatus"></div>
         </div>
-        <div class="field">
-          <label for="fieldAddress">כתובת</label>
-          <input id="fieldAddress" maxlength="200" placeholder="רחוב, מספר, עיר" />
-        </div>
-        <div class="field">
-          <label for="fieldPhone">טלפון (אופציונלי)</label>
-          <input id="fieldPhone" maxlength="30" />
-        </div>
-        <div class="field">
-          <label for="fieldNotes">הערות (אופציונלי)</label>
-          <textarea id="fieldNotes" maxlength="500"></textarea>
-        </div>
-        <div class="field">
-          <label>צבע תיוג</label>
-          <div class="color-picker" id="formColors"></div>
-        </div>
-        <div class="form-status" id="formStatus"></div>
         <div class="form-actions">
           <button class="btn btn-primary" type="submit" id="btnSave">שמירה</button>
           <button class="btn" type="button" id="btnManualPlace">סמן ידנית על המפה</button>
@@ -622,865 +1502,2305 @@
     </div>
   </div>
 
+  <div class="sheet-backdrop" id="detailsBackdrop">
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="detailsTitle" id="detailsSheet">
+      <div class="sheet-handle" aria-hidden="true"></div>
+      <header>
+        <h2 id="detailsTitle">פרטי לקוח</h2>
+        <button class="sheet-close" type="button" id="btnDetailsClose" aria-label="סגירה"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      </header>
+      <div class="sheet-body" id="detailsBody"></div>
+      <div class="sheet-actions" id="detailsActions"></div>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <script>
-  (function () {
-    "use strict";
+  <script type="module">
+"use strict";
 
-    /*
-     * App unlock password is stored as a SHA-256 hex digest only (never in plaintext).
-     * To change it:
-     *   1. In the browser console run:
-     *      crypto.subtle.digest("SHA-256", new TextEncoder().encode("NEW_PASSWORD"))
-     *        .then(buf => console.log([...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("")));
-     *   2. Replace the APP_PASSWORD_SHA256 value below with the printed hex string.
-     */
-    const APP_PASSWORD_SHA256 = "6a9fface2fa7c8a228e795d18566e3d81f3bd3e5cd4d2dcaf09cdbec7c5b9af3";
-    const STORAGE_KEY = "element-customers-map-v1";
-    const SESSION_KEY = "element-customers-map-unlocked";
-    const ISRAEL_CENTER = [31.5, 34.9];
-    const ISRAEL_ZOOM = 8;
-    const MAX_ROUTE_STOPS = 10;
-    const NOMINATIM_GAP_MS = 1100;
+const FIREBASE_APP_SDK = "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+const FIREBASE_AUTH_SDK = "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
+const FIREBASE_FIRESTORE_SDK = "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
-    const COLORS = [
-      { id: "red",    hex: "#e53935", label: "אדום" },
-      { id: "orange", hex: "#fb8c00", label: "כתום" },
-      { id: "yellow", hex: "#fdd835", label: "צהוב" },
-      { id: "green",  hex: "#43a047", label: "ירוק" },
-      { id: "teal",   hex: "#00897b", label: "טורקיז" },
-      { id: "blue",   hex: "#1e88e5", label: "כחול" },
-      { id: "purple", hex: "#8e24aa", label: "סגול" },
-      { id: "gray",   hex: "#757575", label: "אפור" }
-    ];
-    const COLOR_IDS = COLORS.map(function (c) { return c.id; });
+// Filled in only after a real Firebase config is present (dynamic import).
+let initializeApp, getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, sendPasswordResetEmail;
+let initializeFirestore, persistentLocalCache, persistentMultipleTabManager, memoryLocalCache;
+let collection, doc, setDoc, deleteDoc, onSnapshot, serverTimestamp, writeBatch;
 
-    const DEMO_CUSTOMERS = [
-      {
-        id: "demo-tlv",
-        name: "לקוח הדגמה 1 — תל אביב",
-        address: "דיזנגוף 50, תל אביב (הדגמה)",
-        phone: "03-0000001",
-        notes: "נתוני הדגמה בלבד — לא לקוח אמיתי",
-        color: "blue",
-        lat: 32.0758,
-        lng: 34.7752
-      },
-      {
-        id: "demo-jer",
-        name: "לקוח הדגמה 2 — ירושלים",
-        address: "יפו 10, ירושלים (הדגמה)",
-        phone: "02-0000002",
-        notes: "נתוני הדגמה בלבד — לא לקוח אמיתי",
-        color: "green",
-        lat: 31.7832,
-        lng: 35.2170
-      },
-      {
-        id: "demo-hai",
-        name: "לקוח הדגמה 3 — חיפה",
-        address: "הנמל 1, חיפה (הדגמה)",
-        phone: "04-0000003",
-        notes: "נתוני הדגמה בלבד — לא לקוח אמיתי",
-        color: "orange",
-        lat: 32.8193,
-        lng: 34.9990
-      }
-    ];
+/* =============================================================================
+ * FIREBASE CONFIG — paste the Firebase web app config here.
+ * Until these values are filled in (replace every PASTE_HERE), the app
+ * shows a Hebrew message that cloud sync is not configured yet and can
+ * fall back to local-only mode instead of crashing.
+ * See SETUP-HE.md for step-by-step instructions.
+ * ============================================================================= */
+const FIREBASE_CONFIG = {
+  apiKey: "PASTE_HERE",
+  authDomain: "PASTE_HERE",
+  projectId: "PASTE_HERE",
+  storageBucket: "PASTE_HERE",
+  messagingSenderId: "PASTE_HERE",
+  appId: "PASTE_HERE"
+};
 
-    let state = {
-      customers: [],
-      legend: {},
-      selectedId: null,
-      routeIds: [],
-      hiddenColors: [],
-      search: "",
-      placingId: null,
-      formColor: "blue"
+const STORAGE_KEY = "element-customers-map-v1";
+const SESSION_KEY = "element-customers-map-unlocked";
+const MIGRATION_KEY = "element-customers-map-migrated-v1";
+const MAP_VISIBLE_KEY = "element-customers-map-pane-visible-v1";
+/* App unlock password is stored as a SHA-256 hex digest only (never in plaintext). Copied unchanged from the live app. */
+const APP_PASSWORD_SHA256 = "6a9fface2fa7c8a228e795d18566e3d81f3bd3e5cd4d2dcaf09cdbec7c5b9af3";
+const LIST_PAGE_SIZE = 30;
+const FEED_LIMIT = 12;
+const CUSTOMERS_COLLECTION = "customers";
+const SETTINGS_COLLECTION = "settings";
+const LEGEND_DOC_ID = "legend";
+const ISRAEL_CENTER = [31.5, 34.9];
+const ISRAEL_ZOOM = 8;
+const MAX_ROUTE_STOPS = 10;
+const NOMINATIM_GAP_MS = 1100;
+const GEO_DEBOUNCE_MS = 800;
+const GEO_MIN_CHARS = 3;
+const GEO_LIMIT = 5;
+const PHONE_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3.1-8.6A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.6 2.6a2 2 0 0 1-.5 2.1L8.1 9.5a16 16 0 0 0 6 6l1.1-1.1a2 2 0 0 1 2.1-.5c.8.3 1.7.5 2.6.6A2 2 0 0 1 22 16.9z"/></svg>';
+const BATCH_LIMIT = 450;
+
+const COLORS = [
+  { id: "red",    hex: "#e53935", label: "אדום" },
+  { id: "orange", hex: "#fb8c00", label: "כתום" },
+  { id: "yellow", hex: "#fdd835", label: "צהוב" },
+  { id: "green",  hex: "#43a047", label: "ירוק" },
+  { id: "teal",   hex: "#00897b", label: "טורקיז" },
+  { id: "blue",   hex: "#1e88e5", label: "כחול" },
+  { id: "purple", hex: "#8e24aa", label: "סגול" },
+  { id: "gray",   hex: "#757575", label: "אפור" }
+];
+const COLOR_IDS = COLORS.map(function (c) { return c.id; });
+
+const DEMO_CUSTOMERS = [
+  {
+    id: "demo-tlv",
+    name: "לקוח הדגמה 1 — תל אביב",
+    address: "דיזנגוף 50, תל אביב (הדגמה)",
+    phone: "03-0000001",
+    notes: "נתוני הדגמה בלבד — לא לקוח אמיתי",
+    color: "blue",
+    lat: 32.0758,
+    lng: 34.7752
+  },
+  {
+    id: "demo-jer",
+    name: "לקוח הדגמה 2 — ירושלים",
+    address: "יפו 10, ירושלים (הדגמה)",
+    phone: "02-0000002",
+    notes: "נתוני הדגמה בלבד — לא לקוח אמיתי",
+    color: "green",
+    lat: 31.7832,
+    lng: 35.2170
+  },
+  {
+    id: "demo-hai",
+    name: "לקוח הדגמה 3 — חיפה",
+    address: "הנמל 1, חיפה (הדגמה)",
+    phone: "04-0000003",
+    notes: "נתוני הדגמה בלבד — לא לקוח אמיתי",
+    color: "orange",
+    lat: 32.8193,
+    lng: 34.9990
+  }
+];
+
+let state = {
+  customers: [],
+  legend: {},
+  selectedId: null,
+  routeIds: [],
+  hiddenColors: [],
+  search: "",
+  placingId: null,
+  formColor: "blue",
+  mapVisible: false,
+  listRenderLimit: LIST_PAGE_SIZE,
+  detailsId: null
+};
+
+let map = null;
+let markers = {};
+let lastNominatimAt = 0;
+const geoCache = {};
+let geoTimer = null;
+let geoToken = 0;
+let previewMarker = null;
+let formGeo = {
+  status: "idle",
+  results: [],
+  selected: null,
+  addressQueried: "",
+  manualOverride: false,
+  originalAddress: "",
+  originalCoords: null
+};
+let mapReady = false;
+
+let firebaseApp = null;
+let firebaseAuth = null;
+let firebaseDb = null;
+let currentUser = null;
+let cloudConfigured = false;
+let cloudReady = false;
+let localOnlyMode = false;
+let unsubCustomers = null;
+let unsubLegend = null;
+let firstCustomersSnap = null;
+let applyingRemote = false;
+let persistQueue = Promise.resolve();
+let pendingLegacyMigration = null;
+
+function $(id) { return document.getElementById(id); }
+
+async function sha256hex(text) {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(buf)).map(function (b) {
+    return b.toString(16).padStart(2, "0");
+  }).join("");
+}
+
+async function tryUnlock(password) {
+  const hex = await sha256hex(password);
+  return hex === APP_PASSWORD_SHA256;
+}
+
+function escapeHtml(str) {
+  return String(str == null ? "" : str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function phoneHref(phone) {
+  const raw = String(phone == null ? "" : phone).trim();
+  if (!raw) return "";
+  const cleaned = raw.replace(/[^\d+]/g, "");
+  if (!cleaned) return "";
+  return "tel:" + cleaned;
+}
+
+function formatHebrewDate(ms) {
+  const t = toMillis(ms);
+  if (!t) return "";
+  const d = new Date(t);
+  if (!isFinite(d.getTime())) return "";
+  const now = new Date();
+  const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const startThat = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const days = Math.round((startToday - startThat) / 86400000);
+  const timePart = new Intl.DateTimeFormat("he-IL", { hour: "2-digit", minute: "2-digit" }).format(d);
+  if (days === 0) return "היום, " + timePart;
+  if (days === 1) return "אתמול, " + timePart;
+  if (days > 1 && days < 7) {
+    const weekday = new Intl.DateTimeFormat("he-IL", { weekday: "long" }).format(d);
+    return weekday + ", " + timePart;
+  }
+  return new Intl.DateTimeFormat("he-IL", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric"
+  }).format(d);
+}
+
+function initialOf(name) {
+  const s = String(name || "").trim();
+  if (!s) return "?";
+  const words = s.split(/\s+/).filter(Boolean);
+  if (words.length >= 2) return (words[0].charAt(0) + words[1].charAt(0));
+  return s.slice(0, Math.min(2, s.length));
+}
+
+function colorTint(hex) {
+  const h = String(hex || "").replace("#", "");
+  if (h.length !== 6) return "rgba(15,118,110,0.12)";
+  const n = parseInt(h, 16);
+  const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+  return "rgba(" + r + "," + g + "," + b + ",0.14)";
+}
+
+function colorById(id) {
+  return COLORS.find(function (c) { return c.id === id; }) || COLORS[5];
+}
+
+function nextColorId(id) {
+  const i = COLOR_IDS.indexOf(id);
+  return COLOR_IDS[(i + 1) % COLOR_IDS.length];
+}
+
+function uid() {
+  if (crypto.randomUUID) return crypto.randomUUID();
+  return "c-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8);
+}
+
+function isPlaceholderValue(v) {
+  const s = String(v == null ? "" : v).trim();
+  if (!s) return true;
+  const upper = s.toUpperCase();
+  return upper === "PASTE_HERE" || upper.indexOf("PASTE_") === 0;
+}
+
+function isFirebaseConfigured(cfg) {
+  if (!cfg || typeof cfg !== "object") return false;
+  const required = ["apiKey", "authDomain", "projectId", "appId"];
+  return required.every(function (k) { return !isPlaceholderValue(cfg[k]); });
+}
+
+function toMillis(value) {
+  if (value == null || value === "") return null;
+  if (typeof value === "number" && isFinite(value)) return value;
+  if (typeof value.toMillis === "function") return value.toMillis();
+  if (typeof value.seconds === "number") {
+    return value.seconds * 1000 + Math.floor((value.nanoseconds || 0) / 1e6);
+  }
+  const parsed = Date.parse(value);
+  return isFinite(parsed) ? parsed : null;
+}
+
+function customerDupKey(c) {
+  return String(c && c.name ? c.name : "").trim().toLowerCase() + "\n" +
+    String(c && c.address ? c.address : "").trim().toLowerCase();
+}
+
+function normalizeCustomer(c, fallbackId) {
+  if (!c || !c.name) return null;
+  const latRaw = c.lat;
+  const lngRaw = c.lng;
+  const lat = typeof latRaw === "number" ? latRaw : (latRaw != null && latRaw !== "" ? parseFloat(latRaw) : null);
+  const lng = typeof lngRaw === "number" ? lngRaw : (lngRaw != null && lngRaw !== "" ? parseFloat(lngRaw) : null);
+  return {
+    id: c.id || fallbackId || uid(),
+    name: String(c.name),
+    address: c.address ? String(c.address) : "",
+    phone: c.phone ? String(c.phone) : "",
+    notes: (c.notes || c.description) ? String(c.notes || c.description) : "",
+    color: COLOR_IDS.indexOf(c.color) !== -1 ? c.color : "gray",
+    lat: lat != null && isFinite(lat) ? lat : null,
+    lng: lng != null && isFinite(lng) ? lng : null,
+    createdAt: toMillis(c.createdAt) || 0,
+    updatedAt: toMillis(c.updatedAt) || 0,
+    updatedBy: c.updatedBy ? String(c.updatedBy) : ""
+  };
+}
+
+function sortCustomers(list) {
+  list.sort(function (a, b) {
+    const ac = a.createdAt || 0;
+    const bc = b.createdAt || 0;
+    if (ac !== bc) return bc - ac;
+    return String(a.name || "").localeCompare(String(b.name || ""), "he");
+  });
+  return list;
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    if (Array.isArray(data.customers)) {
+      const rawList = data.customers;
+      const hadDates = rawList.some(function (c) { return c && (c.createdAt || c.updatedAt); });
+      const list = rawList.map(function (c) {
+        return normalizeCustomer(c, c && c.id);
+      }).filter(Boolean);
+      state.customers = hadDates ? sortCustomers(list) : list;
+    }
+    if (data.legend && typeof data.legend === "object") state.legend = data.legend;
+  } catch (err) {
+    console.warn("loadState failed", err);
+  }
+}
+
+function readLegacyLocalCustomers() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return { customers: [], legend: {} };
+    const data = JSON.parse(raw);
+    const list = Array.isArray(data.customers) ? data.customers.map(function (c) {
+      return normalizeCustomer(c, c && c.id);
+    }).filter(Boolean) : [];
+    const legend = (data.legend && typeof data.legend === "object") ? data.legend : {};
+    return { customers: list, legend: legend };
+  } catch (err) {
+    console.warn("readLegacyLocalCustomers failed", err);
+    return { customers: [], legend: {} };
+  }
+}
+
+function mirrorLocal() {
+  try {
+    const payload = {
+      customers: state.customers,
+      legend: state.legend
     };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+  } catch (err) {
+    console.warn("mirrorLocal failed", err);
+  }
+}
 
-    let map = null;
-    let markers = {};
-    let lastNominatimAt = 0;
-    let mapReady = false;
+function saveState() {
+  mirrorLocal();
+}
 
-    function $(id) { return document.getElementById(id); }
+function toast(msg, ms) {
+  const el = $("toast");
+  el.textContent = msg;
+  el.classList.add("show");
+  clearTimeout(toast._t);
+  toast._t = setTimeout(function () { el.classList.remove("show"); }, ms || 2800);
+}
 
-    function escapeHtml(str) {
-      return String(str == null ? "" : str)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#39;");
+function visibleCustomers() {
+  const q = state.search.trim().toLowerCase();
+  const hidden = new Set(state.hiddenColors);
+  return state.customers.filter(function (c) {
+    if (hidden.has(c.color)) return false;
+    if (!q) return true;
+    const blob = [c.name, c.address, c.phone, c.notes].join(" ").toLowerCase();
+    return blob.indexOf(q) !== -1;
+  });
+}
+
+function setSyncPill(text, tone) {
+  const el = $("syncPill");
+  if (!el) return;
+  if (!text) {
+    el.hidden = true;
+    el.textContent = "";
+    el.removeAttribute("title");
+    el.removeAttribute("aria-label");
+    el.className = "sync-pill";
+    return;
+  }
+  el.hidden = false;
+  el.textContent = text;
+  el.title = text;
+  el.setAttribute("aria-label", text);
+  el.className = "sync-pill" + (tone ? " " + tone : "");
+}
+
+function updateSyncPill(meta) {
+  if (localOnlyMode || !cloudConfigured) {
+    setSyncPill("מצב מקומי בלבד — אין סנכרון בין מכשירים", "warn");
+    return;
+  }
+  if (!currentUser) {
+    setSyncPill("");
+    return;
+  }
+  if (typeof navigator !== "undefined" && navigator.onLine === false) {
+    setSyncPill("אין רשת — השינויים יישמרו ויתוסנכרנו כשיחזור החיבור", "warn");
+    return;
+  }
+  if (meta && meta.fromCache && meta.hasPendingWrites) {
+    setSyncPill("שומר ומסנכרן…", "warn");
+    return;
+  }
+  if (meta && meta.fromCache) {
+    setSyncPill("מוצג מהשמירה במכשיר — ממתין לענן", "warn");
+    return;
+  }
+  setSyncPill("מסונכרן בענן", "");
+}
+
+function currentEmail() {
+  return (currentUser && currentUser.email) || "";
+}
+
+function customerToDoc(c) {
+  return {
+    id: c.id,
+    name: c.name || "",
+    address: c.address || "",
+    phone: c.phone || "",
+    notes: c.notes || "",
+    color: c.color || "gray",
+    lat: c.lat == null ? null : c.lat,
+    lng: c.lng == null ? null : c.lng,
+    createdAt: c.createdAt || Date.now(),
+    updatedAt: serverTimestamp(),
+    updatedBy: currentEmail()
+  };
+}
+
+function canWriteCloud() {
+  // Live build is localStorage-only. Firebase is not configured and must never run.
+  return false;
+}
+
+function enqueuePersist(work) {
+  persistQueue = persistQueue.then(work).catch(function (err) {
+    console.warn("cloud persist failed", err);
+    toast("השמירה לענן נכשלה. הנתונים נשמרו במכשיר, ונכסה שוב בעדכון הבא.");
+  });
+  return persistQueue;
+}
+
+function persistCustomer(c) {
+  mirrorLocal();
+  if (!canWriteCloud() || !c || !c.id) return Promise.resolve();
+  const rec = c;
+  return enqueuePersist(function () {
+    return setDoc(doc(firebaseDb, CUSTOMERS_COLLECTION, rec.id), customerToDoc(rec), { merge: true });
+  });
+}
+
+function persistLegend() {
+  mirrorLocal();
+  if (!canWriteCloud()) return Promise.resolve();
+  const labels = state.legend || {};
+  return enqueuePersist(function () {
+    return setDoc(doc(firebaseDb, SETTINGS_COLLECTION, LEGEND_DOC_ID), {
+      labels: labels,
+      updatedAt: serverTimestamp(),
+      updatedBy: currentEmail()
+    }, { merge: true });
+  });
+}
+
+function persistDelete(id) {
+  mirrorLocal();
+  if (!canWriteCloud() || !id) return Promise.resolve();
+  return enqueuePersist(function () {
+    return deleteDoc(doc(firebaseDb, CUSTOMERS_COLLECTION, id));
+  });
+}
+
+async function commitBatches(ops) {
+  if (!canWriteCloud()) return;
+  for (let i = 0; i < ops.length; i += BATCH_LIMIT) {
+    const chunk = ops.slice(i, i + BATCH_LIMIT);
+    const batch = writeBatch(firebaseDb);
+    chunk.forEach(function (op) {
+      if (op.type === "set") batch.set(op.ref, op.data, { merge: true });
+      else if (op.type === "delete") batch.delete(op.ref);
+    });
+    await batch.commit();
+  }
+}
+
+function replaceAllInCloud(previousIds) {
+  if (!canWriteCloud()) return Promise.resolve();
+  const prev = new Set(previousIds || []);
+  const ops = [];
+  state.customers.forEach(function (c) {
+    ops.push({
+      type: "set",
+      ref: doc(firebaseDb, CUSTOMERS_COLLECTION, c.id),
+      data: customerToDoc(c)
+    });
+    prev.delete(c.id);
+  });
+  prev.forEach(function (id) {
+    ops.push({ type: "delete", ref: doc(firebaseDb, CUSTOMERS_COLLECTION, id) });
+  });
+  ops.push({
+    type: "set",
+    ref: doc(firebaseDb, SETTINGS_COLLECTION, LEGEND_DOC_ID),
+    data: {
+      labels: state.legend || {},
+      updatedAt: serverTimestamp(),
+      updatedBy: currentEmail()
     }
+  });
+  return enqueuePersist(function () { return commitBatches(ops); });
+}
 
-    async function sha256hex(text) {
-      const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
-      return Array.from(new Uint8Array(buf)).map(function (b) {
-        return b.toString(16).padStart(2, "0");
-      }).join("");
+function docToCustomer(id, data) {
+  return normalizeCustomer(Object.assign({}, data, { id: id }), id);
+}
+
+function applyCustomersSnapshot(snap) {
+  applyingRemote = true;
+  try {
+    const list = [];
+    snap.forEach(function (item) {
+      const rec = docToCustomer(item.id, item.data());
+      if (rec) list.push(rec);
+    });
+    state.customers = sortCustomers(list);
+    const still = new Set(state.customers.map(function (c) { return c.id; }));
+    state.routeIds = state.routeIds.filter(function (id) { return still.has(id); });
+    if (state.selectedId && !still.has(state.selectedId)) state.selectedId = null;
+    if (state.placingId && !still.has(state.placingId)) exitPlaceMode();
+    mirrorLocal();
+    renderAll();
+    updateSyncPill(snap.metadata);
+  } finally {
+    applyingRemote = false;
+  }
+}
+
+function applyLegendSnapshot(snap) {
+  if (!snap.exists()) return;
+  const data = snap.data() || {};
+  const labels = data.labels && typeof data.labels === "object" ? data.labels : data;
+  if (!labels || typeof labels !== "object") return;
+  applyingRemote = true;
+  try {
+    const next = {};
+    Object.keys(labels).forEach(function (k) {
+      if (COLOR_IDS.indexOf(k) !== -1 && typeof labels[k] === "string") next[k] = labels[k];
+    });
+    state.legend = next;
+    mirrorLocal();
+    renderLegend();
+    renderColorFilters();
+  } finally {
+    applyingRemote = false;
+  }
+}
+
+function stopCloudListeners() {
+  if (unsubCustomers) { unsubCustomers(); unsubCustomers = null; }
+  if (unsubLegend) { unsubLegend(); unsubLegend = null; }
+  firstCustomersSnap = null;
+}
+
+function startCloudListeners() {
+  stopCloudListeners();
+  if (!canWriteCloud() && !(cloudReady && firebaseDb && currentUser)) return;
+  firstCustomersSnap = new Promise(function (resolve, reject) {
+    let settled = false;
+    unsubCustomers = onSnapshot(
+      collection(firebaseDb, CUSTOMERS_COLLECTION),
+      { includeMetadataChanges: true },
+      function (snap) {
+        applyCustomersSnapshot(snap);
+        if (!settled && !snap.metadata.fromCache) {
+          settled = true;
+          resolve(snap);
+        } else if (!settled && snap.metadata.fromCache) {
+          // Resolve on the first cache snapshot too, so offline sign-in can proceed.
+          // A later server snapshot will still refresh the list.
+          settled = true;
+          resolve(snap);
+        }
+      },
+      function (err) {
+        console.warn("customers onSnapshot failed", err);
+        setSyncPill("אין הרשאה לענן או שהחיבור נכשל", "danger");
+        toast("לא ניתן לטעון את הלקוחות מהענן. בדקו את כללי האבטחה ואת החיבור.");
+        if (!settled) {
+          settled = true;
+          reject(err);
+        }
+      }
+    );
+  });
+  unsubLegend = onSnapshot(
+    doc(firebaseDb, SETTINGS_COLLECTION, LEGEND_DOC_ID),
+    function (snap) { applyLegendSnapshot(snap); },
+    function (err) { console.warn("legend onSnapshot failed", err); }
+  );
+}
+
+function capturePendingLegacy() {
+  if (localStorage.getItem(MIGRATION_KEY) === "1") {
+    pendingLegacyMigration = null;
+    return;
+  }
+  // Snapshot the pre-cloud localStorage now, before a live listener
+  // overwrites the mirror with cloud data.
+  pendingLegacyMigration = readLegacyLocalCustomers();
+}
+
+async function maybeMigrateLocalCustomers() {
+  if (localStorage.getItem(MIGRATION_KEY) === "1") return;
+  if (!canWriteCloud()) return;
+  try {
+    if (firstCustomersSnap) await firstCustomersSnap;
+  } catch (err) {
+    return;
+  }
+  const legacy = pendingLegacyMigration || readLegacyLocalCustomers();
+  if (!legacy.customers.length) {
+    localStorage.setItem(MIGRATION_KEY, "1");
+    return;
+  }
+  const ok = confirm(
+    "נמצאו " + legacy.customers.length +
+    " לקוחות ששמורים במכשיר זה מהאפליקציה הקודמת.\n\n" +
+    "להעלות אותם לענן כדי שיופיעו גם במכשירים האחרים?\n" +
+    "לקוחות שכבר קיימים בענן (אותו שם ואותה כתובת) ידולגו."
+  );
+  if (!ok) {
+    localStorage.setItem(MIGRATION_KEY, "1");
+    toast("הלקוחות המקומיים לא הועלו. אפשר לייבא אותם אחר כך מקובץ JSON.");
+    return;
+  }
+  const existingKeys = new Set(state.customers.map(customerDupKey));
+  const existingIds = new Set(state.customers.map(function (c) { return c.id; }));
+  let uploaded = 0;
+  let skipped = 0;
+  const ops = [];
+  legacy.customers.forEach(function (c) {
+    if (existingKeys.has(customerDupKey(c))) {
+      skipped += 1;
+      return;
     }
-
-    function colorById(id) {
-      return COLORS.find(function (c) { return c.id === id; }) || COLORS[5];
+    const id = c.id && !existingIds.has(c.id) ? c.id : uid();
+    const rec = Object.assign({}, c, { id: id, updatedBy: currentEmail(), updatedAt: Date.now() });
+    existingKeys.add(customerDupKey(rec));
+    existingIds.add(id);
+    state.customers.unshift(rec);
+    ops.push({
+      type: "set",
+      ref: doc(firebaseDb, CUSTOMERS_COLLECTION, rec.id),
+      data: customerToDoc(rec)
+    });
+    uploaded += 1;
+  });
+  const legendWasEmpty = !Object.keys(state.legend || {}).length;
+  if (legendWasEmpty && legacy.legend && Object.keys(legacy.legend).length) {
+    state.legend = legacy.legend;
+    ops.push({
+      type: "set",
+      ref: doc(firebaseDb, SETTINGS_COLLECTION, LEGEND_DOC_ID),
+      data: {
+        labels: state.legend,
+        updatedAt: serverTimestamp(),
+        updatedBy: currentEmail()
+      }
+    });
+  }
+  sortCustomers(state.customers);
+  mirrorLocal();
+  renderAll();
+  if (ops.length) {
+    try {
+      await enqueuePersist(function () { return commitBatches(ops); });
+    } catch (err) {
+      console.warn("migration upload failed", err);
+      toast("ההעלאה לענן נכשלה חלקית. אפשר לנסות שוב דרך ייצוא וייבוא JSON.");
+      return;
     }
+  }
+  localStorage.setItem(MIGRATION_KEY, "1");
+  toast(
+    uploaded
+      ? ("הועלו " + uploaded + " לקוחות לענן" + (skipped ? (" (דולגו " + skipped + " כפולים)") : ""))
+      : (skipped ? "כל הלקוחות המקומיים כבר קיימים בענן" : "לא נמצאו לקוחות להעלאה")
+  );
+}
 
-    function nextColorId(id) {
-      const i = COLOR_IDS.indexOf(id);
-      return COLOR_IDS[(i + 1) % COLOR_IDS.length];
-    }
+function hebrewAuthError(err) {
+  const code = (err && err.code) || "";
+  const map = {
+    "auth/invalid-email": "כתובת האימייל אינה תקינה",
+    "auth/user-disabled": "החשבון הושבת. פנו למנהל המערכת",
+    "auth/user-not-found": "לא נמצא משתמש עם האימייל הזה",
+    "auth/wrong-password": "סיסמה שגויה",
+    "auth/invalid-credential": "אימייל או סיסמה שגויים",
+    "auth/invalid-login-credentials": "אימייל או סיסמה שגויים",
+    "auth/too-many-requests": "יותר מדי ניסיונות. נסו שוב מאוחר יותר",
+    "auth/network-request-failed": "אין חיבור לרשת. בדקו את החיבור ונסו שוב",
+    "auth/missing-password": "יש להזין סיסמה",
+    "auth/missing-email": "יש להזין כתובת אימייל",
+    "auth/invalid-api-key": "הגדרות Firebase חסרות או שגויות",
+    "auth/unauthorized-domain": "הדומיין הזה לא מורשה ב-Firebase. יש להוסיף אותו ב-Authorized domains",
+    "auth/operation-not-allowed": "כניסה באימייל וסיסמה לא הופעלה בקונסולת Firebase",
+    "auth/internal-error": "אירעה שגיאה פנימית. נסו שוב"
+  };
+  return map[code] || "הכניסה נכשלה. נסו שוב";
+}
 
-    function uid() {
-      if (crypto.randomUUID) return crypto.randomUUID();
-      return "c-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8);
-    }
+function showLock() {
+  $("lockScreen").classList.remove("hidden");
+  const chip = $("userChip");
+  if (chip) chip.hidden = true;
+  const pass = $("lockPassword");
+  if (pass) pass.focus();
+}
 
-    function loadState() {
+function showApp() {
+  $("lockScreen").classList.add("hidden");
+  const chip = $("userChip");
+  if (chip) chip.hidden = true;
+  setSyncPill("");
+  if (!mapReady) initMap();
+  else if (map) setTimeout(function () { map.invalidateSize(); }, 80);
+}
+
+async function loadFirebaseSdk() {
+  const appMod = await import(FIREBASE_APP_SDK);
+  const authMod = await import(FIREBASE_AUTH_SDK);
+  const fsMod = await import(FIREBASE_FIRESTORE_SDK);
+  initializeApp = appMod.initializeApp;
+  getAuth = authMod.getAuth;
+  onAuthStateChanged = authMod.onAuthStateChanged;
+  signInWithEmailAndPassword = authMod.signInWithEmailAndPassword;
+  signOut = authMod.signOut;
+  sendPasswordResetEmail = authMod.sendPasswordResetEmail;
+  initializeFirestore = fsMod.initializeFirestore;
+  persistentLocalCache = fsMod.persistentLocalCache;
+  persistentMultipleTabManager = fsMod.persistentMultipleTabManager;
+  memoryLocalCache = fsMod.memoryLocalCache;
+  collection = fsMod.collection;
+  doc = fsMod.doc;
+  setDoc = fsMod.setDoc;
+  deleteDoc = fsMod.deleteDoc;
+  onSnapshot = fsMod.onSnapshot;
+  serverTimestamp = fsMod.serverTimestamp;
+  writeBatch = fsMod.writeBatch;
+}
+
+async function initFirebaseOrLocalMessage() {
+  cloudConfigured = isFirebaseConfigured(FIREBASE_CONFIG);
+  const banner = $("cloudSetupBanner");
+  const localBtn = $("btnLocalOnly");
+  const signInBtn = $("btnSignIn");
+  const forgotBtn = $("btnForgot");
+  const emailInput = $("lockEmail");
+  const passInput = $("lockPassword");
+
+  if (!cloudConfigured) {
+    banner.classList.remove("hidden");
+    banner.textContent =
+      "הענן עדיין לא הוגדר. כדי להפעיל סנכרון בין המכשירים, יש להדביק את הגדרות Firebase בקובץ (ראה SETUP-HE.md). בינתיים אפשר להמשיך במצב מקומי בלבד — הרשימה תישמר רק בדפדפן הזה.";
+    localBtn.hidden = false;
+    signInBtn.disabled = true;
+    forgotBtn.disabled = true;
+    emailInput.disabled = true;
+    passInput.disabled = true;
+    return;
+  }
+
+  banner.classList.add("hidden");
+  banner.textContent = "";
+  localBtn.hidden = true;
+  signInBtn.disabled = false;
+  forgotBtn.disabled = false;
+  emailInput.disabled = false;
+  passInput.disabled = false;
+
+  try {
+    await loadFirebaseSdk();
+    firebaseApp = initializeApp(FIREBASE_CONFIG);
+    try {
+      firebaseDb = initializeFirestore(firebaseApp, {
+        localCache: persistentLocalCache({
+          tabManager: persistentMultipleTabManager()
+        })
+      });
+    } catch (persistErr) {
+      console.warn("persistent cache failed, falling back to memory cache", persistErr);
       try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return;
-        const data = JSON.parse(raw);
-        if (Array.isArray(data.customers)) state.customers = data.customers;
-        if (data.legend && typeof data.legend === "object") state.legend = data.legend;
-      } catch (err) {
-        console.warn("loadState failed", err);
+        firebaseDb = initializeFirestore(firebaseApp, {
+          localCache: memoryLocalCache()
+        });
+      } catch (memErr) {
+        console.warn("memory cache init also failed", memErr);
+        throw persistErr;
       }
+      toast("שמירה לא מקוונת מלאה אינה זמינה בדפדפן זה, אך הסנכרון בענן פעיל");
     }
+    firebaseAuth = getAuth(firebaseApp);
+    cloudReady = true;
+    onAuthStateChanged(firebaseAuth, onAuthChanged);
+  } catch (err) {
+    console.warn("Firebase init failed", err);
+    cloudReady = false;
+    banner.classList.remove("hidden");
+    banner.textContent =
+      "לא ניתן להתחבר לענן. בדקו את הגדרות Firebase. אפשר להמשיך בינתיים במצב מקומי בלבד.";
+    localBtn.hidden = false;
+    signInBtn.disabled = true;
+    forgotBtn.disabled = true;
+  }
+}
 
-    function saveState() {
-      const payload = {
-        customers: state.customers,
-        legend: state.legend
-      };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+async function onAuthChanged(user) {
+  currentUser = user || null;
+  if (!user) {
+    stopCloudListeners();
+    showLock();
+    updateSyncPill();
+    return;
+  }
+  localOnlyMode = false;
+  showApp();
+  startCloudListeners();
+  try {
+    await maybeMigrateLocalCustomers();
+  } catch (err) {
+    console.warn("migration failed", err);
+  }
+}
+
+async function onLockSubmit(ev) {
+  ev.preventDefault();
+  const input = $("lockPassword");
+  const error = $("lockError");
+  error.textContent = "";
+  const ok = await tryUnlock(input.value);
+  if (ok) {
+    try { sessionStorage.setItem(SESSION_KEY, "1"); } catch (err) {}
+    input.value = "";
+    showApp();
+  } else {
+    error.textContent = "סיסמה שגויה";
+    input.focus();
+    input.select();
+  }
+}
+
+async function onForgotPassword() {
+  const error = $("lockError");
+  error.textContent = "";
+  if (!cloudConfigured || !firebaseAuth) {
+    error.textContent = "הענן עדיין לא הוגדר";
+    return;
+  }
+  const email = $("lockEmail").value.trim();
+  if (!email) {
+    error.textContent = "יש להזין כתובת אימייל כדי לאפס את הסיסמה";
+    $("lockEmail").focus();
+    return;
+  }
+  try {
+    await sendPasswordResetEmail(firebaseAuth, email);
+    toast("נשלח מייל לאיפוס הסיסמה, אם החשבון קיים. בדקו גם בתיקיית הספאם.");
+  } catch (err) {
+    console.warn("password reset failed", err);
+    error.textContent = hebrewAuthError(err);
+  }
+}
+
+function enterLocalOnlyMode() {
+  localOnlyMode = true;
+  currentUser = null;
+  stopCloudListeners();
+  loadState();
+  renderLegend();
+  renderAll();
+  showApp();
+  toast("מצב מקומי בלבד — הרשימה נשמרת רק בדפדפן הזה");
+}
+
+function onSignOut() {
+  try { sessionStorage.removeItem(SESSION_KEY); } catch (err) {}
+  $("lockError").textContent = "";
+  const pass = $("lockPassword");
+  if (pass) pass.value = "";
+  showLock();
+}
+
+/* ---------- Map visibility ---------- */
+function isMapVisibleStored() {
+  try {
+    // Choice is session-only. Ignore any older localStorage "visible" flag
+    // so a returning device still starts with the map closed.
+    const v = sessionStorage.getItem(MAP_VISIBLE_KEY);
+    if (v === "1") return true;
+    if (v === "0") return false;
+  } catch (err) {}
+  return false;
+}
+
+function applyMapVisibility(visible, opts) {
+  opts = opts || {};
+  state.mapVisible = !!visible;
+  const body = document.querySelector(".app-body");
+  if (body) body.classList.toggle("map-hidden", !state.mapVisible);
+  const app = $("appShell");
+  if (app) app.classList.toggle("map-open", state.mapVisible);
+  document.body.classList.toggle("map-open", state.mapVisible);
+  const label = state.mapVisible ? "סגור מפה" : "פתח מפה";
+  ["btnToggleMap", "btnToggleMapHeader"].forEach(function (id) {
+    const btn = $(id);
+    if (!btn) return;
+    btn.textContent = label;
+    btn.setAttribute("aria-pressed", state.mapVisible ? "true" : "false");
+    btn.setAttribute("aria-expanded", state.mapVisible ? "true" : "false");
+    btn.title = label;
+  });
+  const navMap = $("btnNavMap");
+  if (navMap) {
+    navMap.setAttribute("aria-pressed", state.mapVisible ? "true" : "false");
+    const lab = navMap.querySelector(".bottom-nav-map-label");
+    if (lab) lab.textContent = state.mapVisible ? "סגור מפה" : "מפה";
+    navMap.setAttribute("aria-label", label);
+  }
+  const navList = $("btnNavList");
+  if (navList) navList.setAttribute("aria-current", state.mapVisible ? "false" : "page");
+  if (!opts.skipStore) {
+    try { sessionStorage.setItem(MAP_VISIBLE_KEY, state.mapVisible ? "1" : "0"); } catch (err) {}
+  }
+  try { localStorage.removeItem(MAP_VISIBLE_KEY); } catch (err) {}
+  if (state.mapVisible && map) {
+    requestAnimationFrame(function () {
+      setTimeout(function () { if (map) map.invalidateSize(); }, 80);
+      setTimeout(function () { if (map) map.invalidateSize(); }, 280);
+    });
+  }
+}
+
+function toggleMapVisibility() {
+  applyMapVisibility(!state.mapVisible);
+}
+
+function ensureMapVisible() {
+  if (!state.mapVisible) applyMapVisibility(true);
+}
+
+/* ---------- Map ---------- */
+function initMap() {
+  map = L.map("map", { zoomControl: true }).setView(ISRAEL_CENTER, ISRAEL_ZOOM);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 19,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+  }).addTo(map);
+
+  map.on("click", function (e) {
+    if (!state.placingId) return;
+    const c = state.customers.find(function (x) { return x.id === state.placingId; });
+    if (!c) { exitPlaceMode(); return; }
+    c.lat = e.latlng.lat;
+    c.lng = e.latlng.lng;
+    c.updatedAt = Date.now();
+    c.updatedBy = currentEmail();
+    persistCustomer(c);
+    exitPlaceMode();
+    selectCustomer(c.id, { fromMap: false, openPopup: true });
+    renderAll();
+    toast("המיקום עודכן");
+  });
+
+  mapReady = true;
+  renderMarkers();
+  setTimeout(function () { map.invalidateSize(); }, 80);
+}
+
+function markerIcon(colorId, selected) {
+  const hex = colorById(colorId).hex;
+  const cls = "marker-dot" + (selected ? " selected" : "");
+  const size = selected ? 20 : 16;
+  return L.divIcon({
+    className: "cust-marker",
+    html: '<div class="' + cls + '" style="background:' + hex + '"></div>',
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+    popupAnchor: [0, -size / 2]
+  });
+}
+
+function popupHtml(c) {
+  const parts = ['<div class="popup-title">' + escapeHtml(c.name) + "</div>"];
+  if (c.address) parts.push('<div class="popup-line">' + escapeHtml(c.address) + "</div>");
+  if (c.phone) {
+    const href = phoneHref(c.phone);
+    if (href) {
+      parts.push('<div class="popup-line"><a class="popup-phone" href="' + href + '" dir="ltr">' + escapeHtml(c.phone) + "</a></div>");
+    } else {
+      parts.push('<div class="popup-line">' + escapeHtml(c.phone) + "</div>");
     }
+  }
+  if (c.notes) parts.push('<div class="popup-line">' + escapeHtml(c.notes) + "</div>");
+  if (c.lat == null || c.lng == null) {
+    parts.push('<div class="popup-line">אין מיקום על המפה עדיין</div>');
+  }
+  const actions = ['<div class="popup-actions">'];
+  if (c.lat != null && c.lng != null) {
+    const waze = "https://waze.com/ul?ll=" + c.lat + "," + c.lng + "&navigate=yes";
+    actions.push('<a class="btn btn-sm btn-primary" href="' + waze + '" target="_blank" rel="noopener">Waze</a>');
+  }
+  actions.push('<button class="btn btn-sm" type="button" data-details="' + escapeHtml(c.id) + '">פרטים</button>');
+  actions.push('<button class="btn btn-sm" type="button" data-edit="' + escapeHtml(c.id) + '">עריכה</button>');
+  actions.push("</div>");
+  parts.push(actions.join(""));
+  return parts.join("");
+}
 
-    function toast(msg, ms) {
-      const el = $("toast");
-      el.textContent = msg;
-      el.classList.add("show");
-      clearTimeout(toast._t);
-      toast._t = setTimeout(function () { el.classList.remove("show"); }, ms || 2800);
+function upsertMarker(c) {
+  if (c.lat == null || c.lng == null) {
+    if (markers[c.id]) {
+      map.removeLayer(markers[c.id]);
+      delete markers[c.id];
     }
-
-    function visibleCustomers() {
-      const q = state.search.trim().toLowerCase();
-      const hidden = new Set(state.hiddenColors);
-      return state.customers.filter(function (c) {
-        if (hidden.has(c.color)) return false;
-        if (!q) return true;
-        const blob = [c.name, c.address, c.phone, c.notes].join(" ").toLowerCase();
-        return blob.indexOf(q) !== -1;
-      });
-    }
-
-    /* ---------- Auth ---------- */
-    async function tryUnlock(password) {
-      const hex = await sha256hex(password);
-      return hex === APP_PASSWORD_SHA256;
-    }
-
-    function showApp() {
-      $("lockScreen").classList.add("hidden");
-      if (!mapReady) initMap();
-    }
-
-    async function onLockSubmit(ev) {
-      ev.preventDefault();
-      const input = $("lockPassword");
-      const error = $("lockError");
-      error.textContent = "";
-      const ok = await tryUnlock(input.value);
-      if (ok) {
-        sessionStorage.setItem(SESSION_KEY, "1");
-        input.value = "";
-        showApp();
-      } else {
-        error.textContent = "סיסמה שגויה";
-        input.focus();
-        input.select();
+    return;
+  }
+  const selected = state.selectedId === c.id;
+  if (markers[c.id]) {
+    markers[c.id].setLatLng([c.lat, c.lng]);
+    markers[c.id].setIcon(markerIcon(c.color, selected));
+    markers[c.id].setPopupContent(popupHtml(c));
+  } else {
+    const m = L.marker([c.lat, c.lng], {
+      icon: markerIcon(c.color, selected),
+      draggable: true,
+      riseOnHover: true
+    });
+    m.bindPopup(popupHtml(c));
+    m.on("click", function () {
+      selectCustomer(c.id, { fromMap: true, openPopup: true });
+    });
+    m.on("dragend", function (ev) {
+      const pos = ev.target.getLatLng();
+      const live = state.customers.find(function (x) { return x.id === c.id; });
+      if (!live) return;
+      live.lat = pos.lat;
+      live.lng = pos.lng;
+      live.updatedAt = Date.now();
+      live.updatedBy = currentEmail();
+      persistCustomer(live);
+      renderList();
+      toast("המיקום עודכן בגרירת הסמן");
+    });
+    m.on("popupopen", function () {
+      const root = m.getPopup().getElement();
+      if (!root) return;
+      const editBtn = root.querySelector("[data-edit]");
+      if (editBtn) {
+        editBtn.addEventListener("click", function () { openForm(c.id); });
       }
-    }
-
-    /* ---------- Map ---------- */
-    function initMap() {
-      map = L.map("map", { zoomControl: true }).setView(ISRAEL_CENTER, ISRAEL_ZOOM);
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 19,
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-      }).addTo(map);
-
-      map.on("click", function (e) {
-        if (!state.placingId) return;
-        const c = state.customers.find(function (x) { return x.id === state.placingId; });
-        if (!c) { exitPlaceMode(); return; }
-        c.lat = e.latlng.lat;
-        c.lng = e.latlng.lng;
-        c.updatedAt = Date.now();
-        saveState();
-        exitPlaceMode();
-        selectCustomer(c.id, { fromMap: false, openPopup: true });
-        renderAll();
-        toast("המיקום עודכן");
-      });
-
-      mapReady = true;
-      renderMarkers();
-      setTimeout(function () { map.invalidateSize(); }, 80);
-    }
-
-    function markerIcon(colorId, selected) {
-      const hex = colorById(colorId).hex;
-      const cls = "marker-dot" + (selected ? " selected" : "");
-      const size = selected ? 20 : 16;
-      return L.divIcon({
-        className: "cust-marker",
-        html: '<div class="' + cls + '" style="background:' + hex + '"></div>',
-        iconSize: [size, size],
-        iconAnchor: [size / 2, size / 2],
-        popupAnchor: [0, -size / 2]
-      });
-    }
-
-    function popupHtml(c) {
-      const parts = ['<div class="popup-title">' + escapeHtml(c.name) + "</div>"];
-      if (c.address) parts.push('<div class="popup-line">' + escapeHtml(c.address) + "</div>");
-      if (c.phone) parts.push('<div class="popup-line">' + escapeHtml(c.phone) + "</div>");
-      if (c.notes) parts.push('<div class="popup-line">' + escapeHtml(c.notes) + "</div>");
-      if (c.lat == null || c.lng == null) {
-        parts.push('<div class="popup-line">אין מיקום על המפה עדיין</div>');
+      const detailsBtn = root.querySelector("[data-details]");
+      if (detailsBtn) {
+        detailsBtn.addEventListener("click", function () { openDetails(c.id); });
       }
-      const actions = ['<div class="popup-actions">'];
-      if (c.lat != null && c.lng != null) {
-        const waze = "https://waze.com/ul?ll=" + c.lat + "," + c.lng + "&navigate=yes";
-        actions.push('<a class="btn btn-sm btn-primary" href="' + waze + '" target="_blank" rel="noopener">Waze</a>');
-      }
-      actions.push('<button class="btn btn-sm" type="button" data-edit="' + escapeHtml(c.id) + '">עריכה</button>');
-      actions.push("</div>");
-      parts.push(actions.join(""));
-      return parts.join("");
-    }
+    });
+    m.addTo(map);
+    markers[c.id] = m;
+  }
+}
 
-    function upsertMarker(c) {
-      if (c.lat == null || c.lng == null) {
-        if (markers[c.id]) {
-          map.removeLayer(markers[c.id]);
-          delete markers[c.id];
-        }
-        return;
-      }
-      const selected = state.selectedId === c.id;
+function renderMarkers() {
+  if (!map) return;
+  const ids = new Set(state.customers.map(function (c) { return c.id; }));
+  Object.keys(markers).forEach(function (id) {
+    if (!ids.has(id)) {
+      map.removeLayer(markers[id]);
+      delete markers[id];
+    }
+  });
+  const hidden = new Set(state.hiddenColors);
+  const q = state.search.trim().toLowerCase();
+  state.customers.forEach(function (c) {
+    const hideColor = hidden.has(c.color);
+    const hideSearch = q && [c.name, c.address, c.phone, c.notes].join(" ").toLowerCase().indexOf(q) === -1;
+    if (hideColor || hideSearch) {
       if (markers[c.id]) {
-        markers[c.id].setLatLng([c.lat, c.lng]);
-        markers[c.id].setIcon(markerIcon(c.color, selected));
-        markers[c.id].setPopupContent(popupHtml(c));
-      } else {
-        const m = L.marker([c.lat, c.lng], {
-          icon: markerIcon(c.color, selected),
-          draggable: true,
-          riseOnHover: true
-        });
-        m.bindPopup(popupHtml(c));
-        m.on("click", function () {
-          selectCustomer(c.id, { fromMap: true, openPopup: true });
-        });
-        m.on("dragend", function (ev) {
-          const pos = ev.target.getLatLng();
-          const live = state.customers.find(function (x) { return x.id === c.id; });
-          if (!live) return;
-          live.lat = pos.lat;
-          live.lng = pos.lng;
-          live.updatedAt = Date.now();
-          saveState();
-          renderList();
-          toast("המיקום עודכן בגרירת הסמן");
-        });
-        m.on("popupopen", function () {
-          const btn = m.getPopup().getElement() && m.getPopup().getElement().querySelector("[data-edit]");
-          if (btn) {
-            btn.addEventListener("click", function () { openForm(c.id); });
-          }
-        });
-        m.addTo(map);
-        markers[c.id] = m;
+        map.removeLayer(markers[c.id]);
+        delete markers[c.id];
       }
+      return;
     }
+    upsertMarker(c);
+  });
+}
 
-    function renderMarkers() {
-      if (!map) return;
-      const ids = new Set(state.customers.map(function (c) { return c.id; }));
-      Object.keys(markers).forEach(function (id) {
-        if (!ids.has(id)) {
-          map.removeLayer(markers[id]);
-          delete markers[id];
-        }
-      });
-      const hidden = new Set(state.hiddenColors);
-      const q = state.search.trim().toLowerCase();
-      state.customers.forEach(function (c) {
-        const hideColor = hidden.has(c.color);
-        const hideSearch = q && [c.name, c.address, c.phone, c.notes].join(" ").toLowerCase().indexOf(q) === -1;
-        if (hideColor || hideSearch) {
-          if (markers[c.id]) {
-            map.removeLayer(markers[c.id]);
-            delete markers[c.id];
-          }
-          return;
-        }
-        upsertMarker(c);
-      });
-    }
+function enterPlaceMode(id, message) {
+  state.placingId = id;
+  ensureMapVisible();
+  const hint = $("mapHint");
+  hint.textContent = message || "לחץ על המפה כדי לסמן את מיקום הלקוח";
+  hint.classList.add("visible");
+  if (map) map.getContainer().style.cursor = "crosshair";
+  renderList();
+}
 
-    function enterPlaceMode(id, message) {
-      state.placingId = id;
-      const hint = $("mapHint");
-      hint.textContent = message || "לחץ על המפה כדי לסמן את מיקום הלקוח";
-      hint.classList.add("visible");
-      if (map) map.getContainer().style.cursor = "crosshair";
-      renderList();
-    }
+function exitPlaceMode() {
+  state.placingId = null;
+  $("mapHint").classList.remove("visible");
+  if (map) map.getContainer().style.cursor = "";
+}
 
-    function exitPlaceMode() {
-      state.placingId = null;
-      $("mapHint").classList.remove("visible");
-      if (map) map.getContainer().style.cursor = "";
-    }
-
-    /* ---------- List & filters ---------- */
-    function renderColorFilters() {
-      const wrap = $("colorFilters");
-      wrap.innerHTML = "";
-      COLORS.forEach(function (c) {
-        const b = document.createElement("button");
-        b.type = "button";
-        b.className = "color-chip" + (state.hiddenColors.indexOf(c.id) === -1 ? " active" : "");
-        b.style.background = c.hex;
-        b.title = (state.legend[c.id] || c.label) + " — לחץ להצגה/הסתרה";
-        b.setAttribute("aria-pressed", state.hiddenColors.indexOf(c.id) === -1 ? "true" : "false");
-        b.addEventListener("click", function () {
-          const i = state.hiddenColors.indexOf(c.id);
-          if (i === -1) state.hiddenColors.push(c.id);
-          else state.hiddenColors.splice(i, 1);
-          renderAll();
-        });
-        wrap.appendChild(b);
-      });
-    }
-
-    function renderLegend() {
-      const grid = $("legendGrid");
-      grid.innerHTML = "";
-      COLORS.forEach(function (c) {
-        const row = document.createElement("div");
-        row.className = "legend-row";
-        const sw = document.createElement("span");
-        sw.className = "legend-swatch";
-        sw.style.background = c.hex;
-        const input = document.createElement("input");
-        input.type = "text";
-        input.maxLength = 40;
-        input.placeholder = "משמעות הצבע (" + c.label + ")";
-        input.value = state.legend[c.id] || "";
-        input.addEventListener("change", function () {
-          const v = input.value.trim();
-          if (v) state.legend[c.id] = v;
-          else delete state.legend[c.id];
-          saveState();
-          renderColorFilters();
-        });
-        row.appendChild(sw);
-        row.appendChild(input);
-        grid.appendChild(row);
-      });
-    }
-
-    function renderList() {
-      const list = $("customerList");
-      const items = visibleCustomers();
-      list.innerHTML = "";
-      if (!state.customers.length) {
-        list.innerHTML = '<div class="empty-state">אין לקוחות עדיין.<br/>לחץ על «לקוח חדש» כדי להוסיף, או טען לקוחות הדגמה.</div>';
-      } else if (!items.length) {
-        list.innerHTML = '<div class="empty-state">אין לקוחות שתואמים לחיפוש או לסינון הצבעים.</div>';
-      } else {
-        items.forEach(function (c) {
-          const row = document.createElement("div");
-          row.className = "customer-row";
-          row.dataset.id = c.id;
-          if (state.selectedId === c.id) row.classList.add("selected");
-          if (state.placingId === c.id) row.classList.add("placing");
-
-          const check = document.createElement("input");
-          check.type = "checkbox";
-          check.className = "row-check";
-          check.checked = state.routeIds.indexOf(c.id) !== -1;
-          check.title = "בחר למסלול";
-          check.addEventListener("click", function (e) { e.stopPropagation(); });
-          check.addEventListener("change", function () {
-            const i = state.routeIds.indexOf(c.id);
-            if (check.checked && i === -1) state.routeIds.push(c.id);
-            if (!check.checked && i !== -1) state.routeIds.splice(i, 1);
-            updateSelectionCount();
-          });
-
-          const sq = document.createElement("button");
-          sq.type = "button";
-          sq.className = "color-sq";
-          sq.style.background = colorById(c.color).hex;
-          sq.title = "לחץ להחלפת צבע (" + (state.legend[c.color] || colorById(c.color).label) + ")";
-          sq.addEventListener("click", function (e) {
-            e.stopPropagation();
-            c.color = nextColorId(c.color);
-            c.updatedAt = Date.now();
-            saveState();
-            renderAll();
-          });
-
-          const main = document.createElement("div");
-          main.className = "row-main";
-          const name = document.createElement("div");
-          name.className = "row-name";
-          name.textContent = c.name;
-          const addr = document.createElement("div");
-          addr.className = "row-addr";
-          addr.textContent = c.address || "אין כתובת";
-          main.appendChild(name);
-          main.appendChild(addr);
-          if (c.lat == null || c.lng == null) {
-            const meta = document.createElement("div");
-            meta.className = "row-meta";
-            meta.textContent = state.placingId === c.id ? "ממתין ללחיצה על המפה…" : "אין מיקום — לחץ לסימון על המפה";
-            main.appendChild(meta);
-          }
-
-          const actions = document.createElement("div");
-          actions.className = "row-actions";
-          const editBtn = document.createElement("button");
-          editBtn.type = "button";
-          editBtn.className = "btn btn-sm";
-          editBtn.textContent = "עריכה";
-          editBtn.addEventListener("click", function (e) { e.stopPropagation(); openForm(c.id); });
-          const delBtn = document.createElement("button");
-          delBtn.type = "button";
-          delBtn.className = "btn btn-sm btn-danger";
-          delBtn.textContent = "מחיקה";
-          delBtn.addEventListener("click", function (e) { e.stopPropagation(); deleteCustomer(c.id); });
-          actions.appendChild(editBtn);
-          actions.appendChild(delBtn);
-
-          row.appendChild(check);
-          row.appendChild(sq);
-          row.appendChild(main);
-          row.appendChild(actions);
-          row.addEventListener("click", function () {
-            if (c.lat == null || c.lng == null) {
-              selectCustomer(c.id, { fromMap: false, openPopup: false });
-              enterPlaceMode(c.id);
-              return;
-            }
-            selectCustomer(c.id, { fromMap: false, openPopup: true });
-          });
-          list.appendChild(row);
-        });
-      }
-      updateSelectionCount();
-    }
-
-    function updateSelectionCount() {
-      const n = state.routeIds.filter(function (id) {
-        return state.customers.some(function (c) { return c.id === id && c.lat != null; });
-      }).length;
-      $("selectionCount").textContent = n === 1 ? "לקוח אחד נבחר למסלול" : (n + " לקוחות נבחרו למסלול");
-    }
-
-    function renderAll() {
-      renderColorFilters();
-      renderList();
-      renderMarkers();
-    }
-
-    function selectCustomer(id, opts) {
-      opts = opts || {};
-      state.selectedId = id;
-      renderList();
-      renderMarkers();
-      const row = document.querySelector('.customer-row[data-id="' + CSS.escape(id) + '"]');
-      if (row && opts.fromMap !== false) {
-        /* always try to scroll into view when coming from the map */
-      }
-      if (row && opts.fromMap) {
-        row.scrollIntoView({ behavior: "smooth", block: "center" });
-      }
-      const c = state.customers.find(function (x) { return x.id === id; });
-      const marker = markers[id];
-      if (c && c.lat != null && map && !opts.fromMap) {
-        map.flyTo([c.lat, c.lng], Math.max(map.getZoom(), 13), { duration: 0.6 });
-      }
-      if (marker && opts.openPopup) {
-        marker.openPopup();
-      }
-      if (row && !opts.fromMap) {
-        row.scrollIntoView({ behavior: "smooth", block: "nearest" });
-      }
-    }
-
-    /* ---------- CRUD ---------- */
-    function openForm(id) {
-      const modal = $("modalBackdrop");
-      const c = id ? state.customers.find(function (x) { return x.id === id; }) : null;
-      $("modalTitle").textContent = c ? "עריכת לקוח" : "לקוח חדש";
-      $("fieldId").value = c ? c.id : "";
-      $("fieldName").value = c ? c.name : "";
-      $("fieldAddress").value = c ? c.address : "";
-      $("fieldPhone").value = c ? (c.phone || "") : "";
-      $("fieldNotes").value = c ? (c.notes || "") : "";
-      state.formColor = c ? c.color : "blue";
-      $("formStatus").textContent = "";
-      $("formStatus").classList.remove("error");
-      renderFormColors();
-      modal.classList.add("open");
-      setTimeout(function () { $("fieldName").focus(); }, 30);
-    }
-
-    function closeForm() {
-      $("modalBackdrop").classList.remove("open");
-    }
-
-    function renderFormColors() {
-      const wrap = $("formColors");
-      wrap.innerHTML = "";
-      COLORS.forEach(function (c) {
-        const b = document.createElement("button");
-        b.type = "button";
-        b.className = "color-option" + (state.formColor === c.id ? " chosen" : "");
-        b.style.background = c.hex;
-        b.title = state.legend[c.id] || c.label;
-        b.addEventListener("click", function () {
-          state.formColor = c.id;
-          renderFormColors();
-        });
-        wrap.appendChild(b);
-      });
-    }
-
-    async function geocodeAddress(q) {
-      const query = String(q || "").trim();
-      if (!query) return null;
-      const wait = NOMINATIM_GAP_MS - (Date.now() - lastNominatimAt);
-      if (wait > 0) await new Promise(function (r) { setTimeout(r, wait); });
-      lastNominatimAt = Date.now();
-      const url = "https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=il&q=" + encodeURIComponent(query);
-      const res = await fetch(url, {
-        headers: { "Accept": "application/json", "Accept-Language": "he" }
-      });
-      if (!res.ok) throw new Error("geocode HTTP " + res.status);
-      const data = await res.json();
-      if (!data || !data.length) return null;
-      return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), display: data[0].display_name };
-    }
-
-    function collectForm() {
-      return {
-        id: $("fieldId").value || uid(),
-        name: $("fieldName").value.trim(),
-        address: $("fieldAddress").value.trim(),
-        phone: $("fieldPhone").value.trim(),
-        notes: $("fieldNotes").value.trim(),
-        color: state.formColor
-      };
-    }
-
-    function upsertCustomerRecord(fields, coords) {
-      const existing = state.customers.find(function (x) { return x.id === fields.id; });
-      if (existing) {
-        existing.name = fields.name;
-        existing.address = fields.address;
-        existing.phone = fields.phone;
-        existing.notes = fields.notes;
-        existing.color = fields.color;
-        existing.updatedAt = Date.now();
-        if (coords) {
-          existing.lat = coords.lat;
-          existing.lng = coords.lng;
-        }
-        return existing;
-      }
-      const rec = {
-        id: fields.id,
-        name: fields.name,
-        address: fields.address,
-        phone: fields.phone,
-        notes: fields.notes,
-        color: fields.color,
-        lat: coords ? coords.lat : null,
-        lng: coords ? coords.lng : null,
-        createdAt: Date.now(),
-        updatedAt: Date.now()
-      };
-      state.customers.unshift(rec);
-      return rec;
-    }
-
-    async function onFormSubmit(ev) {
-      ev.preventDefault();
-      const fields = collectForm();
-      const status = $("formStatus");
-      status.classList.remove("error");
-      if (!fields.name) {
-        status.textContent = "יש למלא שם לקוח";
-        status.classList.add("error");
-        return;
-      }
-      const existing = state.customers.find(function (x) { return x.id === fields.id; });
-      const addressChanged = !existing || existing.address !== fields.address;
-      const needsGeocode = fields.address && (!existing || addressChanged || existing.lat == null);
-
-      if (needsGeocode) {
-        status.textContent = "מחפש כתובת…";
-        $("btnSave").disabled = true;
-        try {
-          const result = await geocodeAddress(fields.address);
-          $("btnSave").disabled = false;
-          if (result) {
-            const rec = upsertCustomerRecord(fields, result);
-            saveState();
-            closeForm();
-            renderAll();
-            selectCustomer(rec.id, { fromMap: false, openPopup: true });
-            toast("הלקוח נשמר והכתובת אותרה");
-            return;
-          }
-          const rec = upsertCustomerRecord(fields, null);
-          saveState();
-          closeForm();
-          renderAll();
-          selectCustomer(rec.id, { fromMap: false, openPopup: false });
-          enterPlaceMode(rec.id, "הכתובת לא נמצאה. לחץ על המפה כדי לסמן את המיקום");
-          toast("הכתובת לא נמצאה — סמן ידנית על המפה");
-        } catch (err) {
-          $("btnSave").disabled = false;
-          const rec = upsertCustomerRecord(fields, existing && existing.lat != null ? { lat: existing.lat, lng: existing.lng } : null);
-          saveState();
-          closeForm();
-          renderAll();
-          selectCustomer(rec.id, { fromMap: false, openPopup: false });
-          if (rec.lat == null) {
-            enterPlaceMode(rec.id, "לא ניתן היה לאתר את הכתובת. לחץ על המפה כדי לסמן את המיקום");
-          }
-          toast("חיפוש הכתובת נכשל — אפשר לסמן ידנית על המפה");
-          console.warn(err);
-        }
-        return;
-      }
-
-      const rec = upsertCustomerRecord(fields, existing && existing.lat != null ? { lat: existing.lat, lng: existing.lng } : null);
-      saveState();
-      closeForm();
+/* ---------- List & filters ---------- */
+function renderColorFilters() {
+  const wrap = $("colorFilters");
+  wrap.innerHTML = "";
+  COLORS.forEach(function (c) {
+    const b = document.createElement("button");
+    b.type = "button";
+    const on = state.hiddenColors.indexOf(c.id) === -1;
+    b.className = "color-chip" + (on ? " active" : "");
+    b.style.background = "";
+    const dot = document.createElement("i");
+    dot.className = "chip-dot";
+    dot.style.background = c.hex;
+    b.appendChild(dot);
+    b.appendChild(document.createTextNode(state.legend[c.id] || c.label));
+    b.title = (state.legend[c.id] || c.label) + " — לחץ להצגה/הסתרה";
+    b.setAttribute("aria-pressed", state.hiddenColors.indexOf(c.id) === -1 ? "true" : "false");
+    b.addEventListener("click", function () {
+      const i = state.hiddenColors.indexOf(c.id);
+      if (i === -1) state.hiddenColors.push(c.id);
+      else state.hiddenColors.splice(i, 1);
+      resetListWindow();
       renderAll();
-      if (rec.lat != null) selectCustomer(rec.id, { fromMap: false, openPopup: true });
-      else enterPlaceMode(rec.id);
-      toast("הלקוח נשמר");
-    }
+    });
+    wrap.appendChild(b);
+  });
+}
 
-    function onManualPlace() {
-      const fields = collectForm();
-      if (!fields.name) {
-        $("formStatus").textContent = "יש למלא שם לקוח לפני הסימון על המפה";
-        $("formStatus").classList.add("error");
+function renderLegend() {
+  const grid = $("legendGrid");
+  grid.innerHTML = "";
+  COLORS.forEach(function (c) {
+    const row = document.createElement("div");
+    row.className = "legend-row";
+    const sw = document.createElement("span");
+    sw.className = "legend-swatch";
+    sw.style.background = c.hex;
+    const input = document.createElement("input");
+    input.type = "text";
+    input.maxLength = 40;
+    input.placeholder = "משמעות הצבע (" + c.label + ")";
+    input.value = state.legend[c.id] || "";
+    input.addEventListener("change", function () {
+      const v = input.value.trim();
+      if (v) state.legend[c.id] = v;
+      else delete state.legend[c.id];
+      persistLegend();
+      renderColorFilters();
+    });
+    row.appendChild(sw);
+    row.appendChild(input);
+    grid.appendChild(row);
+  });
+}
+
+function resetListWindow() {
+  state.listRenderLimit = LIST_PAGE_SIZE;
+}
+
+function describeCustomerCount(shown, matched, total) {
+  const totalLabel = total === 1 ? "לקוח אחד" : (total + " לקוחות");
+  if (total === 0) return "אין לקוחות";
+  if (matched < total && shown < matched) {
+    return "מוצגים " + shown + " מתוך " + matched + " תוצאות (סה״כ " + total + ")";
+  }
+  if (matched < total) {
+    return "נמצאו " + matched + " מתוך " + totalLabel;
+  }
+  if (shown < matched) {
+    return "מוצגים " + shown + " מתוך " + totalLabel;
+  }
+  return totalLabel;
+}
+
+function updateCustomerCount(shown, matched, total) {
+  const el = $("customerCount");
+  if (!el) return;
+  el.innerHTML = '<span class="count-num">' + escapeHtml(describeCustomerCount(shown, matched, total)) + "</span>";
+}
+
+function loadMoreCustomers() {
+  state.listRenderLimit += LIST_PAGE_SIZE;
+  renderList();
+}
+
+function renderList() {
+  const list = $("customerList");
+  const items = visibleCustomers();
+  const scrollTop = list.scrollTop;
+  if (state.selectedId) {
+    const idx = items.findIndex(function (c) { return c.id === state.selectedId; });
+    if (idx >= state.listRenderLimit) state.listRenderLimit = idx + 1;
+  }
+  if (state.detailsId) {
+    const didx = items.findIndex(function (c) { return c.id === state.detailsId; });
+    if (didx >= state.listRenderLimit) state.listRenderLimit = didx + 1;
+  }
+  const shownItems = items.slice(0, state.listRenderLimit);
+  list.innerHTML = "";
+  if (!state.customers.length) {
+    list.innerHTML = '<div class="empty-state">אין לקוחות עדיין.<br/>לחץ על «לקוח חדש» כדי להוסיף, או טען לקוחות הדגמה.</div>';
+  } else if (!items.length) {
+    list.innerHTML = '<div class="empty-state">אין לקוחות שתואמים לחיפוש או לסינון הצבעים.</div>';
+  } else {
+    shownItems.forEach(function (c) {
+      const row = document.createElement("div");
+      row.className = "customer-row";
+      row.dataset.id = c.id;
+      row.setAttribute("role", "button");
+      row.tabIndex = 0;
+      if (state.selectedId === c.id) row.classList.add("selected");
+      if (state.placingId === c.id) row.classList.add("placing");
+
+      const check = document.createElement("input");
+      check.type = "checkbox";
+      check.className = "row-check";
+      check.checked = state.routeIds.indexOf(c.id) !== -1;
+      check.title = "בחר למסלול";
+      check.setAttribute("aria-label", "בחר למסלול");
+      check.addEventListener("click", function (e) { e.stopPropagation(); });
+      check.addEventListener("change", function () {
+        const i = state.routeIds.indexOf(c.id);
+        if (check.checked && i === -1) state.routeIds.push(c.id);
+        if (!check.checked && i !== -1) state.routeIds.splice(i, 1);
+        updateSelectionCount();
+      });
+
+      const col = colorById(c.color);
+      const ava = document.createElement("button");
+      ava.type = "button";
+      ava.className = "row-ava";
+      ava.style.background = colorTint(col.hex);
+      ava.style.color = col.hex;
+      ava.textContent = initialOf(c.name);
+      ava.title = "לחץ להחלפת צבע (" + (state.legend[c.color] || col.label) + ")";
+      ava.addEventListener("click", function (e) {
+        e.stopPropagation();
+        c.color = nextColorId(c.color);
+        c.updatedAt = Date.now();
+        c.updatedBy = currentEmail();
+        persistCustomer(c);
+        renderAll();
+      });
+
+      const main = document.createElement("div");
+      main.className = "row-main";
+      const name = document.createElement("div");
+      name.className = "row-name";
+      name.textContent = c.name;
+      const addr = document.createElement("div");
+      addr.className = "row-addr";
+      const addrText = document.createElement("span");
+      addrText.textContent = c.address || "אין כתובת";
+      addr.appendChild(addrText);
+      const tag = document.createElement("span");
+      tag.className = "row-tag";
+      tag.style.background = colorTint(col.hex);
+      tag.style.color = col.hex;
+      tag.textContent = state.legend[c.color] || col.label;
+      addr.appendChild(tag);
+      main.appendChild(name);
+      main.appendChild(addr);
+      if (c.lat == null || c.lng == null) {
+        const meta = document.createElement("div");
+        meta.className = "row-meta";
+        meta.textContent = state.placingId === c.id ? "ממתין ללחיצה על המפה…" : "אין מיקום על המפה";
+        main.appendChild(meta);
+      }
+
+      const actions = document.createElement("div");
+      actions.className = "row-actions";
+      const tel = c.phone ? phoneHref(c.phone) : "";
+      if (tel) {
+        const call = document.createElement("a");
+        call.className = "call-btn";
+        call.href = tel;
+        call.setAttribute("aria-label", "חיוג אל " + c.name);
+        call.innerHTML = PHONE_ICON;
+        call.addEventListener("click", function (e) { e.stopPropagation(); });
+        actions.appendChild(call);
+      }
+      const editBtn = document.createElement("button");
+      editBtn.type = "button";
+      editBtn.className = "btn btn-sm";
+      editBtn.textContent = "עריכה";
+      editBtn.addEventListener("click", function (e) { e.stopPropagation(); openForm(c.id); });
+      const delBtn = document.createElement("button");
+      delBtn.type = "button";
+      delBtn.className = "btn btn-sm btn-danger";
+      delBtn.textContent = "מחיקה";
+      delBtn.addEventListener("click", function (e) { e.stopPropagation(); deleteCustomer(c.id); });
+      actions.appendChild(editBtn);
+      actions.appendChild(delBtn);
+
+      row.appendChild(check);
+      row.appendChild(ava);
+      row.appendChild(main);
+      row.appendChild(actions);
+      row.addEventListener("click", function () {
+        selectCustomer(c.id, { fromMap: false, openPopup: c.lat != null });
+        openDetails(c.id);
+      });
+      row.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          row.click();
+        }
+      });
+      list.appendChild(row);
+    });
+    if (shownItems.length < items.length) {
+      const wrap = document.createElement("div");
+      wrap.className = "load-more-wrap";
+      const more = document.createElement("button");
+      more.type = "button";
+      more.className = "btn";
+      more.textContent = "טען עוד (" + (items.length - shownItems.length) + " נוספים)";
+      more.addEventListener("click", loadMoreCustomers);
+      wrap.appendChild(more);
+      list.appendChild(wrap);
+    }
+  }
+  updateCustomerCount(shownItems.length, items.length, state.customers.length);
+  updateSelectionCount();
+  list.scrollTop = scrollTop;
+}
+
+function renderFeed() {
+  const wrap = $("activityFeed");
+  if (!wrap) return;
+  const items = state.customers.slice().sort(function (a, b) {
+    const au = a.updatedAt || a.createdAt || 0;
+    const bu = b.updatedAt || b.createdAt || 0;
+    if (au !== bu) return bu - au;
+    return String(a.name || "").localeCompare(String(b.name || ""), "he");
+  }).slice(0, FEED_LIMIT);
+
+  wrap.innerHTML = "";
+  const head = document.createElement("div");
+  head.className = "feed-head";
+  const title = document.createElement("div");
+  title.className = "feed-title";
+  title.textContent = "עדכונים אחרונים";
+  const sub = document.createElement("div");
+  sub.className = "feed-sub";
+  sub.textContent = items.length ? (items.length === 1 ? "פעילות אחת" : items.length + " פעילויות") : "";
+  head.appendChild(title);
+  head.appendChild(sub);
+  wrap.appendChild(head);
+
+  if (!items.length) {
+    const empty = document.createElement("div");
+    empty.className = "feed-empty";
+    empty.innerHTML = '<div class="feed-empty-title">אין עדכונים עדיין</div>' +
+      '<div class="feed-empty-sub">כשתשמרו לקוח חדש או תעדכנו לקוח קיים, הפעילות האחרונה תופיע כאן.</div>';
+    wrap.appendChild(empty);
+    return;
+  }
+
+  const track = document.createElement("div");
+  track.className = "feed-track";
+  items.forEach(function (c) {
+    const card = document.createElement("button");
+    card.type = "button";
+    const fresh = (Date.now() - (c.updatedAt || c.createdAt || 0)) < 24 * 3600 * 1000;
+    card.className = "story-card" + (fresh ? " fresh" : "");
+    card.title = c.name;
+    const ring = document.createElement("div");
+    ring.className = "story-ring";
+    const av = document.createElement("div");
+    av.className = "story-avatar";
+    av.style.background = colorById(c.color).hex;
+    av.textContent = initialOf(c.name);
+    ring.appendChild(av);
+    const nm = document.createElement("span");
+    nm.className = "story-name";
+    nm.textContent = c.name;
+    const dt = document.createElement("span");
+    dt.className = "story-date";
+    dt.textContent = formatHebrewDate(c.updatedAt || c.createdAt) || "ללא תאריך";
+    card.appendChild(ring);
+    card.appendChild(nm);
+    card.appendChild(dt);
+    card.addEventListener("click", function () {
+      selectCustomer(c.id, { fromMap: false, openPopup: c.lat != null });
+      openDetails(c.id);
+    });
+    track.appendChild(card);
+  });
+  wrap.appendChild(track);
+}
+
+function updateSelectionCount() {
+  const n = state.routeIds.filter(function (id) {
+    return state.customers.some(function (c) { return c.id === id && c.lat != null; });
+  }).length;
+  $("selectionCount").textContent = n === 1 ? "לקוח אחד נבחר למסלול" : (n + " לקוחות נבחרו למסלול");
+}
+
+function renderAll() {
+  renderColorFilters();
+  renderFeed();
+  renderList();
+  renderMarkers();
+  if (state.detailsId) refreshDetails();
+}
+
+function selectCustomer(id, opts) {
+  opts = opts || {};
+  state.selectedId = id;
+  renderList();
+  renderMarkers();
+  const row = document.querySelector('.customer-row[data-id="' + CSS.escape(id) + '"]');
+  if (row && opts.fromMap) {
+    row.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+  const c = state.customers.find(function (x) { return x.id === id; });
+  const marker = markers[id];
+  if (c && c.lat != null && map && state.mapVisible && !opts.fromMap) {
+    map.flyTo([c.lat, c.lng], Math.max(map.getZoom(), 13), { duration: 0.6 });
+  }
+  if (marker && opts.openPopup && state.mapVisible) {
+    marker.openPopup();
+  }
+  if (row && !opts.fromMap) {
+    row.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+}
+
+/* ---------- Customer details ---------- */
+function closeDetails() {
+  state.detailsId = null;
+  const backdrop = $("detailsBackdrop");
+  if (backdrop) backdrop.classList.remove("open");
+}
+
+function refreshDetails() {
+  if (!state.detailsId) return;
+  const c = state.customers.find(function (x) { return x.id === state.detailsId; });
+  if (!c) {
+    closeDetails();
+    return;
+  }
+  fillDetails(c);
+}
+
+function fillDetails(c) {
+  $("detailsTitle").textContent = c.name || "פרטי לקוח";
+  const body = $("detailsBody");
+  body.innerHTML = "";
+
+  function addRow(label, nodeOrText, muted) {
+    const row = document.createElement("div");
+    row.className = "detail-row";
+    const lab = document.createElement("div");
+    lab.className = "detail-label";
+    lab.textContent = label;
+    const val = document.createElement("div");
+    val.className = "detail-value" + (muted ? " muted" : "");
+    if (typeof nodeOrText === "string") val.textContent = nodeOrText;
+    else if (nodeOrText) val.appendChild(nodeOrText);
+    row.appendChild(lab);
+    row.appendChild(val);
+    body.appendChild(row);
+  }
+
+  addRow("שם", c.name || "—", !c.name);
+  addRow("כתובת", c.address || "לא הוזנה כתובת", !c.address);
+
+  if (c.phone) {
+    const href = phoneHref(c.phone);
+    if (href) {
+      const a = document.createElement("a");
+      a.className = "detail-phone";
+      a.href = href;
+      a.textContent = c.phone;
+      a.dir = "ltr";
+      addRow("טלפון", a, false);
+    } else {
+      addRow("טלפון", c.phone, false);
+    }
+  } else {
+    addRow("טלפון", "לא הוזן מספר טלפון", true);
+  }
+
+  addRow("תיאור", c.notes || "אין תיאור", !c.notes);
+
+  const colorWrap = document.createElement("div");
+  colorWrap.className = "detail-color";
+  const sw = document.createElement("span");
+  sw.className = "detail-swatch";
+  sw.style.background = colorById(c.color).hex;
+  const colorName = document.createElement("span");
+  colorName.textContent = state.legend[c.color] || colorById(c.color).label;
+  colorWrap.appendChild(sw);
+  colorWrap.appendChild(colorName);
+  addRow("צבע תיוג", colorWrap, false);
+
+  if (c.lat != null && c.lng != null) {
+    const coords = document.createElement("div");
+    coords.dir = "ltr";
+    coords.style.unicodeBidi = "isolate";
+    coords.textContent = Number(c.lat).toFixed(5) + ", " + Number(c.lng).toFixed(5);
+    addRow("מיקום במפה", coords, false);
+  } else {
+    addRow("מיקום במפה", "אין מיקום עדיין — אפשר לסמן על המפה", true);
+  }
+
+  addRow("נוצר", formatHebrewDate(c.createdAt) || "לא ידוע", !c.createdAt);
+  addRow("עודכן לאחרונה", formatHebrewDate(c.updatedAt) || "לא ידוע", !c.updatedAt);
+  if (c.updatedBy) addRow("עודכן על ידי", c.updatedBy, false);
+
+  const actions = $("detailsActions");
+  actions.innerHTML = "";
+
+  const editBtn = document.createElement("button");
+  editBtn.type = "button";
+  editBtn.className = "btn btn-primary";
+  editBtn.textContent = "עריכה";
+  editBtn.addEventListener("click", function () {
+    const id = c.id;
+    closeDetails();
+    openForm(id);
+  });
+  actions.appendChild(editBtn);
+
+  if (c.phone && phoneHref(c.phone)) {
+    const call = document.createElement("a");
+    call.className = "btn";
+    call.href = phoneHref(c.phone);
+    call.textContent = "התקשר";
+    actions.appendChild(call);
+  }
+
+  if (c.lat != null && c.lng != null) {
+    const waze = document.createElement("a");
+    waze.className = "btn";
+    waze.href = "https://waze.com/ul?ll=" + c.lat + "," + c.lng + "&navigate=yes";
+    waze.target = "_blank";
+    waze.rel = "noopener";
+    waze.textContent = "Waze";
+    actions.appendChild(waze);
+  } else {
+    const placeBtn = document.createElement("button");
+    placeBtn.type = "button";
+    placeBtn.className = "btn";
+    placeBtn.textContent = "סמן על המפה";
+    placeBtn.addEventListener("click", function () {
+      const id = c.id;
+      closeDetails();
+      selectCustomer(id, { fromMap: false, openPopup: false });
+      enterPlaceMode(id);
+    });
+    actions.appendChild(placeBtn);
+  }
+
+  const delBtn = document.createElement("button");
+  delBtn.type = "button";
+  delBtn.className = "btn btn-danger";
+  delBtn.textContent = "מחיקה";
+  delBtn.addEventListener("click", function () { deleteCustomer(c.id); });
+  actions.appendChild(delBtn);
+}
+
+function openDetails(id) {
+  const c = state.customers.find(function (x) { return x.id === id; });
+  if (!c) return;
+  state.detailsId = id;
+  fillDetails(c);
+  const sheet = $("detailsSheet");
+  if (sheet) { sheet.style.transform = ""; sheet.style.transition = ""; }
+  $("detailsBackdrop").classList.add("open");
+}
+
+/* ---------- CRUD ---------- */
+function openForm(id) {
+  const modal = $("modalBackdrop");
+  const c = id ? state.customers.find(function (x) { return x.id === id; }) : null;
+  $("modalTitle").textContent = c ? "עריכת לקוח" : "לקוח חדש";
+  $("fieldId").value = c ? c.id : "";
+  $("fieldName").value = c ? c.name : "";
+  $("fieldAddress").value = c ? c.address : "";
+  $("fieldPhone").value = c ? (c.phone || "") : "";
+  $("fieldNotes").value = c ? (c.notes || "") : "";
+  state.formColor = c ? c.color : "blue";
+  $("formStatus").textContent = "";
+  $("formStatus").classList.remove("error");
+  resetFormGeo(c);
+  renderFormColors();
+  const sheet = modal.querySelector(".modal");
+  if (sheet) { sheet.style.transform = ""; sheet.style.transition = ""; }
+  modal.classList.add("open");
+  setTimeout(function () { $("fieldName").focus(); }, 30);
+}
+
+function closeForm() {
+  $("modalBackdrop").classList.remove("open");
+  clearTimeout(geoTimer);
+  geoToken += 1;
+  clearPreviewMarker();
+  setGeoStatus("");
+  clearGeoResults();
+}
+
+function renderFormColors() {
+  const wrap = $("formColors");
+  wrap.innerHTML = "";
+  COLORS.forEach(function (c) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "color-option" + (state.formColor === c.id ? " chosen" : "");
+    b.style.background = c.hex;
+    b.title = state.legend[c.id] || c.label;
+    b.addEventListener("click", function () {
+      state.formColor = c.id;
+      renderFormColors();
+    });
+    wrap.appendChild(b);
+  });
+}
+
+function geoCacheKey(q) {
+  return String(q || "").trim().toLowerCase();
+}
+
+function normalizeGeoResults(data) {
+  if (!data || !data.length) return [];
+  return data.map(function (item) {
+    return {
+      lat: parseFloat(item.lat),
+      lng: parseFloat(item.lon),
+      display: item.display_name || ""
+    };
+  }).filter(function (item) { return isFinite(item.lat) && isFinite(item.lng); });
+}
+
+async function geocodeResults(q) {
+  const query = String(q || "").trim();
+  if (!query) return [];
+  const key = geoCacheKey(query);
+  if (Object.prototype.hasOwnProperty.call(geoCache, key)) return geoCache[key];
+  const wait = NOMINATIM_GAP_MS - (Date.now() - lastNominatimAt);
+  if (wait > 0) await new Promise(function (r) { setTimeout(r, wait); });
+  lastNominatimAt = Date.now();
+  const url = "https://nominatim.openstreetmap.org/search?format=json&limit=" + GEO_LIMIT + "&countrycodes=il&q=" + encodeURIComponent(query);
+  const res = await fetch(url, {
+    headers: { "Accept": "application/json", "Accept-Language": "he" }
+  });
+  if (!res.ok) throw new Error("geocode HTTP " + res.status);
+  const results = normalizeGeoResults(await res.json());
+  geoCache[key] = results;
+  return results;
+}
+
+async function geocodeAddress(q) {
+  const results = await geocodeResults(q);
+  return results.length ? results[0] : null;
+}
+
+function setGeoStatus(text, tone) {
+  const el = $("geoStatus");
+  if (!el) return;
+  if (!text) {
+    el.hidden = true;
+    el.textContent = "";
+    el.className = "geo-status";
+    return;
+  }
+  el.hidden = false;
+  el.textContent = text;
+  el.className = "geo-status" + (tone ? " " + tone : "");
+}
+
+function clearGeoResults() {
+  const el = $("geoResults");
+  if (!el) return;
+  el.hidden = true;
+  el.innerHTML = "";
+}
+
+function clearPreviewMarker() {
+  if (previewMarker && map) {
+    map.removeLayer(previewMarker);
+  }
+  previewMarker = null;
+}
+
+function showPreviewMarker(lat, lng) {
+  if (lat == null || lng == null || !isFinite(lat) || !isFinite(lng)) return;
+  ensureMapVisible();
+  if (!mapReady) initMap();
+  if (!map) return;
+  if (previewMarker) previewMarker.setLatLng([lat, lng]);
+  else {
+    previewMarker = L.circleMarker([lat, lng], {
+      radius: 10,
+      color: "#0F766E",
+      weight: 3,
+      fillColor: "#5EEAD4",
+      fillOpacity: 0.9
+    }).addTo(map);
+  }
+  const z = Math.max(map.getZoom ? map.getZoom() : 8, 15);
+  map.setView([lat, lng], z, { animate: true });
+  setTimeout(function () { if (map) map.invalidateSize(); }, 80);
+}
+
+function chooseGeoResult(item, address) {
+  if (!item) return;
+  formGeo.selected = item;
+  formGeo.addressQueried = address;
+  formGeo.manualOverride = false;
+  formGeo.status = "found";
+  setGeoStatus("נמצא" + (item.display ? (" — " + item.display) : ""), "ok");
+  ensureMapVisible();
+  showPreviewMarker(item.lat, item.lng);
+  const box = $("geoResults");
+  if (box) {
+    Array.prototype.forEach.call(box.querySelectorAll(".geo-option"), function (btn) {
+      btn.setAttribute("aria-selected", btn.getAttribute("data-lat") === String(item.lat) && btn.getAttribute("data-lng") === String(item.lng) ? "true" : "false");
+    });
+  }
+}
+
+function renderGeoPickList(results, address) {
+  const box = $("geoResults");
+  if (!box) return;
+  box.innerHTML = "";
+  if (!results || results.length < 2) {
+    box.hidden = true;
+    return;
+  }
+  box.hidden = false;
+  results.forEach(function (item, i) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "geo-option";
+    btn.textContent = item.display || ("תוצאה " + (i + 1));
+    btn.setAttribute("data-lat", String(item.lat));
+    btn.setAttribute("data-lng", String(item.lng));
+    if (formGeo.selected && formGeo.selected.lat === item.lat && formGeo.selected.lng === item.lng) {
+      btn.setAttribute("aria-selected", "true");
+    }
+    btn.addEventListener("click", function () { chooseGeoResult(item, address); });
+    box.appendChild(btn);
+  });
+}
+
+function resetFormGeo(existing) {
+  clearTimeout(geoTimer);
+  geoTimer = null;
+  geoToken += 1;
+  formGeo = {
+    status: "idle",
+    results: [],
+    selected: existing && existing.lat != null ? { lat: existing.lat, lng: existing.lng, display: "" } : null,
+    addressQueried: existing ? (existing.address || "") : "",
+    manualOverride: false,
+    originalAddress: existing ? (existing.address || "") : "",
+    originalCoords: existing && existing.lat != null ? { lat: existing.lat, lng: existing.lng } : null
+  };
+  setGeoStatus("");
+  clearGeoResults();
+  clearPreviewMarker();
+}
+
+async function autoGeocodeAddress(raw, opts) {
+  opts = opts || {};
+  const query = String(raw || "").trim();
+  if (!query || query.length < GEO_MIN_CHARS) {
+    if (!query) {
+      setGeoStatus("");
+      clearGeoResults();
+    }
+    return;
+  }
+  if (formGeo.originalCoords && query === formGeo.originalAddress) {
+    formGeo.selected = formGeo.originalCoords;
+    formGeo.addressQueried = query;
+    formGeo.manualOverride = false;
+    formGeo.status = "idle";
+    setGeoStatus("");
+    clearGeoResults();
+    clearPreviewMarker();
+    return;
+  }
+  if (formGeo.manualOverride && query === formGeo.addressQueried) return;
+  if (formGeo.status === "found" && query === formGeo.addressQueried && formGeo.selected) return;
+
+  const token = ++geoToken;
+  formGeo.status = "loading";
+  setGeoStatus("מאתר כתובת…", "busy");
+  try {
+    const results = await geocodeResults(query);
+    if (token !== geoToken) return;
+    if ($("fieldAddress") && $("fieldAddress").value.trim() !== query) return;
+    formGeo.results = results;
+    formGeo.addressQueried = query;
+    if (!results.length) {
+      formGeo.status = "notfound";
+      formGeo.selected = formGeo.originalCoords;
+      setGeoStatus("לא נמצא — אפשר לסמן ידנית", "warn");
+      clearGeoResults();
+      return;
+    }
+    formGeo.status = "found";
+    chooseGeoResult(results[0], query);
+    renderGeoPickList(results, query);
+    if (results.length > 1) {
+      setGeoStatus("נמצאו " + results.length + " תוצאות — בחרו את המתאימה, או סמנו ידנית", "ok");
+    }
+  } catch (err) {
+    if (token !== geoToken) return;
+    console.warn("auto geocode failed", err);
+    formGeo.status = "error";
+    setGeoStatus("לא ניתן לאתר כרגע — אפשר לסמן ידנית", "warn");
+  }
+}
+
+function scheduleAutoGeocode() {
+  clearTimeout(geoTimer);
+  const query = $("fieldAddress") ? $("fieldAddress").value.trim() : "";
+  if (formGeo.originalCoords && query === formGeo.originalAddress) {
+    autoGeocodeAddress(query, { reason: "restore" });
+    return;
+  }
+  geoTimer = setTimeout(function () {
+    autoGeocodeAddress(query, { reason: "debounce" });
+  }, GEO_DEBOUNCE_MS);
+}
+
+function resolveFormCoords(fields, existing) {
+  const addressChanged = !existing || (existing.address || "") !== fields.address;
+  if (formGeo.selected && formGeo.addressQueried === fields.address && formGeo.status === "found") {
+    return formGeo.selected;
+  }
+  if (!addressChanged && existing && existing.lat != null) {
+    return { lat: existing.lat, lng: existing.lng };
+  }
+  if (formGeo.manualOverride && !addressChanged && existing && existing.lat != null) {
+    return { lat: existing.lat, lng: existing.lng };
+  }
+  if (formGeo.selected && !addressChanged) return formGeo.selected;
+  return null;
+}
+
+function collectForm() {
+  return {
+    id: $("fieldId").value || uid(),
+    name: $("fieldName").value.trim(),
+    address: $("fieldAddress").value.trim(),
+    phone: $("fieldPhone").value.trim(),
+    notes: $("fieldNotes").value.trim(),
+    color: state.formColor
+  };
+}
+
+function upsertCustomerRecord(fields, coords) {
+  const existing = state.customers.find(function (x) { return x.id === fields.id; });
+  if (existing) {
+    existing.name = fields.name;
+    existing.address = fields.address;
+    existing.phone = fields.phone;
+    existing.notes = fields.notes;
+    existing.color = fields.color;
+    existing.updatedAt = Date.now();
+    existing.updatedBy = currentEmail();
+    if (coords) {
+      existing.lat = coords.lat;
+      existing.lng = coords.lng;
+    }
+    return existing;
+  }
+  const rec = {
+    id: fields.id,
+    name: fields.name,
+    address: fields.address,
+    phone: fields.phone,
+    notes: fields.notes,
+    color: fields.color,
+    lat: coords ? coords.lat : null,
+    lng: coords ? coords.lng : null,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    updatedBy: currentEmail()
+  };
+  state.customers.unshift(rec);
+  return rec;
+}
+
+async function onFormSubmit(ev) {
+  ev.preventDefault();
+  const fields = collectForm();
+  const status = $("formStatus");
+  status.classList.remove("error");
+  if (!fields.name) {
+    status.textContent = "יש למלא שם לקוח";
+    status.classList.add("error");
+    return;
+  }
+  const existing = state.customers.find(function (x) { return x.id === fields.id; });
+  const addressChanged = !existing || (existing.address || "") !== fields.address;
+  const already = resolveFormCoords(fields, existing);
+  const keepExisting = existing && existing.lat != null && !addressChanged;
+  const needsGeocode = fields.address && !already && !keepExisting && (!existing || addressChanged || existing.lat == null);
+
+  if (already) {
+    const rec = upsertCustomerRecord(fields, already);
+    persistCustomer(rec);
+    closeForm();
+    renderAll();
+    if (rec.lat != null) selectCustomer(rec.id, { fromMap: false, openPopup: true });
+    else enterPlaceMode(rec.id);
+    toast(already.display ? "הלקוח נשמר והכתובת אותרה" : "הלקוח נשמר");
+    return;
+  }
+
+  if (needsGeocode) {
+    status.textContent = "מחפש כתובת…";
+    $("btnSave").disabled = true;
+    try {
+      const result = await geocodeAddress(fields.address);
+      $("btnSave").disabled = false;
+      if (result) {
+        const rec = upsertCustomerRecord(fields, result);
+        persistCustomer(rec);
+        closeForm();
+        renderAll();
+        selectCustomer(rec.id, { fromMap: false, openPopup: true });
+        toast("הלקוח נשמר והכתובת אותרה");
         return;
       }
-      const existing = state.customers.find(function (x) { return x.id === fields.id; });
-      const rec = upsertCustomerRecord(fields, existing && existing.lat != null ? { lat: existing.lat, lng: existing.lng } : null);
-      saveState();
+      const rec = upsertCustomerRecord(fields, null);
+      persistCustomer(rec);
       closeForm();
       renderAll();
       selectCustomer(rec.id, { fromMap: false, openPopup: false });
-      enterPlaceMode(rec.id);
-    }
-
-    function deleteCustomer(id) {
-      const c = state.customers.find(function (x) { return x.id === id; });
-      if (!c) return;
-      const ok = confirm("למחוק את הלקוח «" + c.name + "»? הפעולה אינה ניתנת לביטול.");
-      if (!ok) return;
-      state.customers = state.customers.filter(function (x) { return x.id !== id; });
-      state.routeIds = state.routeIds.filter(function (x) { return x !== id; });
-      if (state.selectedId === id) state.selectedId = null;
-      if (state.placingId === id) exitPlaceMode();
-      saveState();
+      enterPlaceMode(rec.id, "הכתובת לא נמצאה. לחץ על המפה כדי לסמן את המיקום");
+      toast("הכתובת לא נמצאה — סמן ידנית על המפה");
+    } catch (err) {
+      $("btnSave").disabled = false;
+      const rec = upsertCustomerRecord(fields, existing && existing.lat != null ? { lat: existing.lat, lng: existing.lng } : null);
+      persistCustomer(rec);
+      closeForm();
       renderAll();
-      toast("הלקוח נמחק");
+      selectCustomer(rec.id, { fromMap: false, openPopup: false });
+      if (rec.lat == null) {
+        enterPlaceMode(rec.id, "לא ניתן היה לאתר את הכתובת. לחץ על המפה כדי לסמן את המיקום");
+      }
+      toast("חיפוש הכתובת נכשל — אפשר לסמן ידנית על המפה");
+      console.warn(err);
     }
+    return;
+  }
 
-    /* ---------- Import / Export / Demo ---------- */
-    function exportJson() {
-      const payload = {
-        exportedAt: new Date().toISOString(),
-        customers: state.customers,
-        legend: state.legend
-      };
-      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = "customers-map-backup.json";
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(function () { URL.revokeObjectURL(a.href); }, 500);
-      toast("הקובץ יוצא");
-    }
+  const rec = upsertCustomerRecord(fields, existing && existing.lat != null ? { lat: existing.lat, lng: existing.lng } : null);
+  persistCustomer(rec);
+  closeForm();
+  renderAll();
+  if (rec.lat != null) selectCustomer(rec.id, { fromMap: false, openPopup: true });
+  else enterPlaceMode(rec.id);
+  toast("הלקוח נשמר");
+}
 
-    function importJsonFile(file) {
-      const reader = new FileReader();
-      reader.onload = function () {
-        try {
-          const data = JSON.parse(reader.result);
-          const list = Array.isArray(data) ? data : data.customers;
-          if (!Array.isArray(list)) throw new Error("missing customers array");
-          const cleaned = list.map(function (c) {
-            if (!c || !c.name) return null;
-            return {
-              id: c.id || uid(),
-              name: String(c.name),
-              address: c.address ? String(c.address) : "",
-              phone: c.phone ? String(c.phone) : "",
-              notes: c.notes ? String(c.notes) : "",
-              color: COLOR_IDS.indexOf(c.color) !== -1 ? c.color : "gray",
-              lat: typeof c.lat === "number" ? c.lat : (c.lat != null ? parseFloat(c.lat) : null),
-              lng: typeof c.lng === "number" ? c.lng : (c.lng != null ? parseFloat(c.lng) : null),
-              createdAt: c.createdAt || Date.now(),
-              updatedAt: Date.now()
-            };
-          }).filter(Boolean);
-          if (!confirm("ייבוא יחליף את רשימת הלקוחות הנוכחית (" + cleaned.length + " לקוחות בקובץ). להמשיך?")) return;
-          state.customers = cleaned;
-          if (data.legend && typeof data.legend === "object") state.legend = data.legend;
-          state.routeIds = [];
-          state.selectedId = null;
-          exitPlaceMode();
-          saveState();
-          renderAll();
-          if (map) map.setView(ISRAEL_CENTER, ISRAEL_ZOOM);
-          toast("הייבוא הושלם");
-        } catch (err) {
-          alert("לא ניתן לייבא את הקובץ. ודא שזה קובץ JSON שיוצא מהאפליקציה.");
-          console.warn(err);
-        }
-      };
-      reader.readAsText(file, "utf-8");
-    }
+function onManualPlace() {
+  const fields = collectForm();
+  if (!fields.name) {
+    $("formStatus").textContent = "יש למלא שם לקוח לפני הסימון על המפה";
+    $("formStatus").classList.add("error");
+    return;
+  }
+  formGeo.manualOverride = true;
+  formGeo.addressQueried = fields.address;
+  const existing = state.customers.find(function (x) { return x.id === fields.id; });
+  const pending = resolveFormCoords(fields, existing);
+  const rec = upsertCustomerRecord(fields, pending || (existing && existing.lat != null ? { lat: existing.lat, lng: existing.lng } : null));
+  persistCustomer(rec);
+  closeForm();
+  renderAll();
+  selectCustomer(rec.id, { fromMap: false, openPopup: false });
+  enterPlaceMode(rec.id);
+}
 
-    function loadDemo() {
-      const have = new Set(state.customers.map(function (c) { return c.id; }));
-      let added = 0;
-      DEMO_CUSTOMERS.forEach(function (d) {
-        if (have.has(d.id)) {
-          const existing = state.customers.find(function (c) { return c.id === d.id; });
-          Object.assign(existing, d, { updatedAt: Date.now() });
-        } else {
-          state.customers.unshift(Object.assign({ createdAt: Date.now(), updatedAt: Date.now() }, d));
-          added += 1;
-        }
-      });
-      saveState();
+function deleteCustomer(id) {
+  const c = state.customers.find(function (x) { return x.id === id; });
+  if (!c) return;
+  const ok = confirm("למחוק את הלקוח «" + c.name + "»? הפעולה אינה ניתנת לביטול.");
+  if (!ok) return;
+  state.customers = state.customers.filter(function (x) { return x.id !== id; });
+  state.routeIds = state.routeIds.filter(function (x) { return x !== id; });
+  if (state.selectedId === id) state.selectedId = null;
+  if (state.placingId === id) exitPlaceMode();
+  persistDelete(id);
+  if (state.detailsId === id) closeDetails();
+  renderAll();
+  toast("הלקוח נמחק");
+}
+
+/* ---------- Import / Export / Demo ---------- */
+function exportJson() {
+  const payload = {
+    exportedAt: new Date().toISOString(),
+    customers: state.customers,
+    legend: state.legend
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "customers-map-backup.json";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(function () { URL.revokeObjectURL(a.href); }, 500);
+  toast("הקובץ יוצא");
+}
+
+function importJsonFile(file) {
+  const reader = new FileReader();
+  reader.onload = function () {
+    try {
+      const data = JSON.parse(reader.result);
+      const list = Array.isArray(data) ? data : data.customers;
+      if (!Array.isArray(list)) throw new Error("missing customers array");
+      const cleaned = list.map(function (c) {
+        return normalizeCustomer(c, c && c.id);
+      }).filter(Boolean);
+      if (!confirm("ייבוא יחליף את רשימת הלקוחות הנוכחית (" + cleaned.length + " לקוחות בקובץ). להמשיך?")) return;
+      const previousIds = state.customers.map(function (c) { return c.id; });
+      state.customers = cleaned;
+      if (data.legend && typeof data.legend === "object") state.legend = data.legend;
+      state.routeIds = [];
+      state.selectedId = null;
+      exitPlaceMode();
+      mirrorLocal();
+      replaceAllInCloud(previousIds);
       renderAll();
-      if (map) {
-        const layer = L.featureGroup(DEMO_CUSTOMERS.filter(function (d) {
-          return markers[d.id];
-        }).map(function (d) { return markers[d.id]; }));
-        if (layer.getLayers().length) map.fitBounds(layer.getBounds().pad(0.25));
-      }
-      toast(added ? "נטענו " + added + " לקוחות הדגמה" : "לקוחות ההדגמה עודכנו");
+      if (map) map.setView(ISRAEL_CENTER, ISRAEL_ZOOM);
+      toast("הייבוא הושלם");
+    } catch (err) {
+      alert("לא ניתן לייבא את הקובץ. ודא שזה קובץ JSON שיוצא מהאפליקציה.");
+      console.warn(err);
     }
+  };
+  reader.readAsText(file, "utf-8");
+}
 
-    function openGoogleRoute() {
-      const stops = state.routeIds.map(function (id) {
-        return state.customers.find(function (c) { return c.id === id; });
-      }).filter(function (c) { return c && c.lat != null && c.lng != null; });
-      if (!stops.length) {
-        toast("יש לבחור לפחות לקוח אחד עם מיקום על המפה");
-        return;
-      }
-      if (stops.length > MAX_ROUTE_STOPS) {
-        alert("נבחרו " + stops.length + " עצירות, אך Google Maps מאפשר עד כ־" + MAX_ROUTE_STOPS + " עצירות בקישור אחד. יש לצמצם את הבחירה.");
-        return;
-      }
-      const path = stops.map(function (c) { return c.lat + "," + c.lng; }).join("/");
-      const url = "https://www.google.com/maps/dir/" + path;
-      window.open(url, "_blank", "noopener");
+function loadDemo() {
+  const have = new Set(state.customers.map(function (c) { return c.id; }));
+  let added = 0;
+  DEMO_CUSTOMERS.forEach(function (d) {
+    if (have.has(d.id)) {
+      const existing = state.customers.find(function (c) { return c.id === d.id; });
+      Object.assign(existing, d, { updatedAt: Date.now(), updatedBy: currentEmail() });
+      persistCustomer(existing);
+    } else {
+      const rec = Object.assign({ createdAt: Date.now(), updatedAt: Date.now(), updatedBy: currentEmail() }, d);
+      state.customers.unshift(rec);
+      persistCustomer(rec);
+      added += 1;
     }
+  });
+  mirrorLocal();
+  renderAll();
+  if (map) {
+    const layer = L.featureGroup(DEMO_CUSTOMERS.filter(function (d) {
+      return markers[d.id];
+    }).map(function (d) { return markers[d.id]; }));
+    if (layer.getLayers().length) map.fitBounds(layer.getBounds().pad(0.25));
+  }
+  toast(added ? "נטענו " + added + " לקוחות הדגמה" : "לקוחות ההדגמה עודכנו");
+}
 
-    /* ---------- Wire up ---------- */
-    function bind() {
-      $("lockForm").addEventListener("submit", onLockSubmit);
-      $("btnAdd").addEventListener("click", function () { openForm(null); });
-      $("btnModalClose").addEventListener("click", closeForm);
-      $("btnCancelForm").addEventListener("click", closeForm);
-      $("modalBackdrop").addEventListener("click", function (e) {
-        if (e.target === $("modalBackdrop")) closeForm();
-      });
-      $("customerForm").addEventListener("submit", onFormSubmit);
-      $("btnManualPlace").addEventListener("click", onManualPlace);
-      $("searchInput").addEventListener("input", function () {
-        state.search = $("searchInput").value;
-        renderAll();
-      });
-      $("btnExport").addEventListener("click", exportJson);
-      $("btnImport").addEventListener("click", function () { $("importFile").click(); });
-      $("importFile").addEventListener("change", function () {
-        const f = $("importFile").files && $("importFile").files[0];
-        $("importFile").value = "";
-        if (f) importJsonFile(f);
-      });
-      $("btnDemo").addEventListener("click", loadDemo);
-      $("btnSelectVisible").addEventListener("click", function () {
-        visibleCustomers().forEach(function (c) {
-          if (c.lat == null) return;
-          if (state.routeIds.indexOf(c.id) === -1) state.routeIds.push(c.id);
-        });
-        renderList();
-      });
-      $("btnClearSelection").addEventListener("click", function () {
-        state.routeIds = [];
-        renderList();
-      });
-      $("btnRoute").addEventListener("click", openGoogleRoute);
-      document.addEventListener("keydown", function (e) {
-        if (e.key === "Escape") {
-          if ($("modalBackdrop").classList.contains("open")) closeForm();
-          else if (state.placingId) { exitPlaceMode(); renderList(); }
-        }
-      });
-    }
+function openGoogleRoute() {
+  const stops = state.routeIds.map(function (id) {
+    return state.customers.find(function (c) { return c.id === id; });
+  }).filter(function (c) { return c && c.lat != null && c.lng != null; });
+  if (!stops.length) {
+    toast("יש לבחור לפחות לקוח אחד עם מיקום על המפה");
+    return;
+  }
+  if (stops.length > MAX_ROUTE_STOPS) {
+    alert("נבחרו " + stops.length + " עצירות, אך Google Maps מאפשר עד כ־" + MAX_ROUTE_STOPS + " עצירות בקישור אחד. יש לצמצם את הבחירה.");
+    return;
+  }
+  const path = stops.map(function (c) { return c.lat + "," + c.lng; }).join("/");
+  const url = "https://www.google.com/maps/dir/" + path;
+  window.open(url, "_blank", "noopener");
+}
 
-    /* Exposed for tests (no secrets) */
-    window.__customersApp = {
-      tryUnlock: tryUnlock,
-      loadDemo: loadDemo,
-      getState: function () { return state; },
-      selectCustomer: selectCustomer,
-      cycleColor: function (id) {
-        const c = state.customers.find(function (x) { return x.id === id; });
-        if (!c) return null;
-        c.color = nextColorId(c.color);
-        c.updatedAt = Date.now();
-        saveState();
-        renderAll();
-        return c.color;
-      }
-    };
-
-    loadState();
-    renderLegend();
-    renderColorFilters();
+/* ---------- Wire up ---------- */
+function bind() {
+  $("lockForm").addEventListener("submit", onLockSubmit);
+  $("btnSignOut").addEventListener("click", onSignOut);
+  $("btnAdd").addEventListener("click", function () { openForm(null); });
+  $("btnFabAdd").addEventListener("click", function () { openForm(null); });
+  $("btnModalClose").addEventListener("click", closeForm);
+  $("btnCancelForm").addEventListener("click", closeForm);
+  $("modalBackdrop").addEventListener("click", function (e) {
+    if (e.target === $("modalBackdrop")) closeForm();
+  });
+  $("customerForm").addEventListener("submit", onFormSubmit);
+  $("btnManualPlace").addEventListener("click", onManualPlace);
+  $("fieldAddress").addEventListener("input", scheduleAutoGeocode);
+  $("fieldAddress").addEventListener("blur", function () {
+    clearTimeout(geoTimer);
+    autoGeocodeAddress($("fieldAddress").value.trim(), { reason: "blur" });
+  });
+  $("searchInput").addEventListener("input", function () {
+    state.search = $("searchInput").value;
+    resetListWindow();
+    renderAll();
+  });
+  $("btnExport").addEventListener("click", exportJson);
+  $("btnImport").addEventListener("click", function () { $("importFile").click(); });
+  $("importFile").addEventListener("change", function () {
+    const f = $("importFile").files && $("importFile").files[0];
+    $("importFile").value = "";
+    if (f) importJsonFile(f);
+  });
+  $("btnDemo").addEventListener("click", loadDemo);
+  $("btnSelectVisible").addEventListener("click", function () {
+    visibleCustomers().forEach(function (c) {
+      if (c.lat == null) return;
+      if (state.routeIds.indexOf(c.id) === -1) state.routeIds.push(c.id);
+    });
     renderList();
-    bind();
-    if (sessionStorage.getItem(SESSION_KEY) === "1") showApp();
-    else $("lockPassword").focus();
-  })();
+  });
+  $("btnClearSelection").addEventListener("click", function () {
+    state.routeIds = [];
+    renderList();
+  });
+  $("btnRoute").addEventListener("click", openGoogleRoute);
+  function setHeaderMenuOpen(open) {
+    const menu = $("headerMenu");
+    const btn = $("btnHeaderMenu");
+    const nav = $("btnNavMenu");
+    if (!menu) return;
+    menu.hidden = !open;
+    if (btn) btn.setAttribute("aria-expanded", open ? "true" : "false");
+    if (nav) nav.setAttribute("aria-expanded", open ? "true" : "false");
+  }
+  function onMenuToggle(e) {
+    e.stopPropagation();
+    setHeaderMenuOpen($("headerMenu").hidden);
+  }
+  $("btnHeaderMenu").addEventListener("click", onMenuToggle);
+  if ($("btnNavMenu")) $("btnNavMenu").addEventListener("click", onMenuToggle);
+  document.addEventListener("click", function (e) {
+    const menu = $("headerMenu");
+    if (!menu || menu.hidden) return;
+    const wrap = document.querySelector(".header-menu-wrap");
+    const nav = $("btnNavMenu");
+    if (menu.contains(e.target)) return;
+    if (wrap && wrap.contains(e.target)) return;
+    if (nav && nav.contains(e.target)) return;
+    setHeaderMenuOpen(false);
+  });
+  ["btnExport", "btnImport", "btnDemo", "btnSignOut", "btnToggleMapHeader"].forEach(function (id) {
+    const el = $(id);
+    if (el) el.addEventListener("click", function () { setHeaderMenuOpen(false); });
+  });
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") {
+      if ($("headerMenu") && !$("headerMenu").hidden) setHeaderMenuOpen(false);
+      else if ($("modalBackdrop").classList.contains("open")) closeForm();
+      else if ($("detailsBackdrop") && $("detailsBackdrop").classList.contains("open")) closeDetails();
+      else if (state.placingId) { exitPlaceMode(); renderList(); }
+    }
+  });
+  window.addEventListener("online", function () { updateSyncPill(); });
+  window.addEventListener("offline", function () { updateSyncPill(); });
+  window.addEventListener("resize", function () {
+    if (map && state.mapVisible) map.invalidateSize();
+  });
+
+  function onToggleMap(e) {
+    e.preventDefault();
+    toggleMapVisibility();
+  }
+  $("btnToggleMap").addEventListener("click", onToggleMap);
+  $("btnToggleMapHeader").addEventListener("click", onToggleMap);
+  if ($("btnMapClose")) $("btnMapClose").addEventListener("click", onToggleMap);
+  if ($("btnNavMap")) $("btnNavMap").addEventListener("click", onToggleMap);
+  if ($("btnNavAdd")) $("btnNavAdd").addEventListener("click", function () { openForm(null); });
+  if ($("btnNavList")) $("btnNavList").addEventListener("click", function () {
+    if (state.mapVisible) applyMapVisibility(false);
+    const list = $("customerList");
+    if (list) list.scrollTop = 0;
+  });
+
+  function enableSwipeToClose(sheetEl, onClose) {
+    if (!sheetEl) return;
+    let startY = 0, currentY = 0, dragging = false;
+    const handle = sheetEl.querySelector(".sheet-handle");
+    const header = sheetEl.querySelector("header");
+    function isGrip(t) {
+      return (handle && (handle === t || handle.contains(t))) || (header && (header === t || header.contains(t)));
+    }
+    sheetEl.addEventListener("touchstart", function (e) {
+      if (!e.touches || !e.touches[0] || !isGrip(e.target)) { dragging = false; return; }
+      startY = e.touches[0].clientY;
+      currentY = startY;
+      dragging = true;
+      sheetEl.style.transition = "none";
+    }, { passive: true });
+    sheetEl.addEventListener("touchmove", function (e) {
+      if (!dragging || !e.touches || !e.touches[0]) return;
+      currentY = e.touches[0].clientY;
+      const dy = Math.max(0, currentY - startY);
+      sheetEl.style.transform = "translateY(" + dy + "px)";
+    }, { passive: true });
+    function endSwipe() {
+      if (!dragging) return;
+      dragging = false;
+      const dy = currentY - startY;
+      sheetEl.style.transition = "transform 0.18s ease-out";
+      if (dy > 80) {
+        sheetEl.style.transform = "translateY(100%)";
+        setTimeout(function () {
+          sheetEl.style.transform = "";
+          sheetEl.style.transition = "";
+          onClose();
+        }, 160);
+      } else {
+        sheetEl.style.transform = "";
+        setTimeout(function () { sheetEl.style.transition = ""; }, 180);
+      }
+    }
+    sheetEl.addEventListener("touchend", endSwipe);
+    sheetEl.addEventListener("touchcancel", endSwipe);
+  }
+  enableSwipeToClose(document.querySelector("#modalBackdrop .modal"), closeForm);
+  enableSwipeToClose($("detailsSheet"), closeDetails);
+
+  $("btnDetailsClose").addEventListener("click", closeDetails);
+  $("detailsBackdrop").addEventListener("click", function (e) {
+    if (e.target === $("detailsBackdrop")) closeDetails();
+  });
+
+  $("customerList").addEventListener("scroll", function () {
+    const list = $("customerList");
+    if (list.scrollTop + list.clientHeight >= list.scrollHeight - 80) {
+      const items = visibleCustomers();
+      if (state.listRenderLimit < items.length) loadMoreCustomers();
+    }
+  });
+}
+
+window.__customersApp = {
+  isFirebaseConfigured: function () { return false; },
+  isLocalOnly: function () { return true; },
+  storageKey: STORAGE_KEY,
+  sessionKey: SESSION_KEY,
+  tryUnlock: tryUnlock,
+  loadDemo: loadDemo,
+  getState: function () { return state; },
+  renderAll: renderAll,
+  openDetails: openDetails,
+  setMapVisible: function (v) { applyMapVisibility(!!v); },
+  geocodeAddress: geocodeAddress,
+  autoGeocodeAddress: autoGeocodeAddress,
+  getFormGeo: function () { return formGeo; },
+  selectCustomer: selectCustomer,
+  cycleColor: function (id) {
+    const c = state.customers.find(function (x) { return x.id === id; });
+    if (!c) return null;
+    c.color = nextColorId(c.color);
+    c.updatedAt = Date.now();
+    c.updatedBy = currentEmail();
+    persistCustomer(c);
+    renderAll();
+    return c.color;
+  }
+};
+
+loadState();
+renderLegend();
+renderColorFilters();
+renderFeed();
+renderList();
+bind();
+applyMapVisibility(isMapVisibleStored(), { skipStore: true });
+if (sessionStorage.getItem(SESSION_KEY) === "1") showApp();
+else if ($("lockPassword")) $("lockPassword").focus();
   </script>
 
   <script>
