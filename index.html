@@ -5387,16 +5387,38 @@ function findInventoryByName(name) {
 
 
 var triumRenameNoticeShown = false;
+var pendingTriumCloudInv = [];
+var pendingTriumCloudDel = [];
 
-function isExactInventoryName(name, expected) {
-  return inventoryNameKey(name) === inventoryNameKey(expected);
+function normalizeInventoryName(name) {
+  var s = String(name == null ? "" : name);
+  try { s = s.normalize("NFKC"); } catch (err) {}
+  s = s.replace(/[\u200B-\u200F\u202A-\u202E\u2060\u2066-\u2069\uFEFF\u00A0\u202F\u2007]/g, " ");
+  return s.replace(/\s+/g, " ").trim().toLowerCase();
+}
+
+function isOldTriumName(name) {
+  var k = normalizeInventoryName(name);
+  return k === "trium" || k === "truim";
+}
+
+function isNew3MName(name) {
+  return normalizeInventoryName(name) === "3m";
+}
+
+function queueTriumCloudPatch(list, rec, key) {
+  if (!rec || !rec.id) return;
+  var id = rec.id;
+  var rest = list.filter(function (x) { return x.id !== id; });
+  rest.push(rec);
+  if (key === "inv") pendingTriumCloudInv = rest;
+  else pendingTriumCloudDel = rest;
 }
 
 function maybeRenameTriumTo3M() {
-  const oldName = "Trium";
   const newName = "3M";
-  const has3M = (inventoryState.items || []).some(function (it) { return isExactInventoryName(it.name, newName); });
-  const triumItems = (inventoryState.items || []).filter(function (it) { return isExactInventoryName(it.name, oldName); });
+  const has3M = (inventoryState.items || []).some(function (it) { return isNew3MName(it.name); });
+  const triumItems = (inventoryState.items || []).filter(function (it) { return isOldTriumName(it.name); });
   if (triumItems.length && has3M) {
     if (!triumRenameNoticeShown) {
       triumRenameNoticeShown = true;
@@ -5412,15 +5434,17 @@ function maybeRenameTriumTo3M() {
       it.name = newName;
       it.updatedAt = now;
       renamedItems.push(it);
+      queueTriumCloudPatch(pendingTriumCloudInv, it, "inv");
     });
     saveInventory();
   }
 
   const renamedDeliveries = [];
   (deliveriesState.items || []).forEach(function (d) {
-    if (isExactInventoryName(d.itemName, oldName)) {
+    if (isOldTriumName(d.itemName)) {
       d.itemName = newName;
       renamedDeliveries.push(d);
+      queueTriumCloudPatch(pendingTriumCloudDel, d, "del");
     }
   });
   if (renamedDeliveries.length) saveDeliveriesLocal();
@@ -5430,7 +5454,7 @@ function maybeRenameTriumTo3M() {
     ordersState.items.forEach(function (o) {
       let changed = false;
       (o.lines || []).forEach(function (line) {
-        if (isExactInventoryName(line.itemName, oldName)) {
+        if (isOldTriumName(line.itemName)) {
           line.itemName = newName;
           changed = true;
         }
@@ -5447,8 +5471,8 @@ function maybeRenameTriumTo3M() {
     if (typeof renderInventory === "function") renderInventory();
     if (typeof renderOrders === "function" && $("ordersView") && !$("ordersView").hidden) renderOrders();
     if (state.detailsId && typeof refreshDetails === "function") refreshDetails();
-    syncTriumRenameToCloud(renamedItems, renamedDeliveries);
   }
+  flushTriumRenameToCloud();
   return {
     renamed: renamedItems.length,
     deliveries: renamedDeliveries.length,
@@ -5456,10 +5480,10 @@ function maybeRenameTriumTo3M() {
   };
 }
 
-async function syncTriumRenameToCloud(invItems, deliveries) {
+async function flushTriumRenameToCloud() {
   if (!inventoryCloud.ready || inventoryCloud.applyingRemote || !firebaseDb || !updateDoc) return;
-  const items = invItems || [];
-  const rows = deliveries || [];
+  const items = pendingTriumCloudInv.slice();
+  const rows = pendingTriumCloudDel.slice();
   if (!items.length && !rows.length) return;
   bumpCloudPending(1);
   try {
@@ -5470,6 +5494,7 @@ async function syncTriumRenameToCloud(invItems, deliveries) {
           name: items[i].name,
           updatedAt: items[i].updatedAt
         });
+        pendingTriumCloudInv = pendingTriumCloudInv.filter(function (x) { return x.id !== items[i].id; });
       } catch (err) {
         console.warn("inventory name update failed", err);
       }
@@ -5479,6 +5504,7 @@ async function syncTriumRenameToCloud(invItems, deliveries) {
         await updateDoc(doc(firebaseDb, DELIVERIES_COLLECTION, rows[i].id), {
           itemName: rows[i].itemName
         });
+        pendingTriumCloudDel = pendingTriumCloudDel.filter(function (x) { return x.id !== rows[i].id; });
       } catch (err2) {
         console.warn("delivery item name update failed", err2);
       }
@@ -5496,6 +5522,7 @@ function loadInventory() {
       return makeInventoryItem(name, 0, 0);
     });
     saveInventory();
+    maybeRenameTriumTo3M();
     return { seeded: true };
   }
   try {
@@ -5514,6 +5541,7 @@ function loadInventory() {
   } catch (err) {
     inventoryState.items = [];
   }
+  maybeRenameTriumTo3M();
   return { seeded: false };
 }
 
@@ -6369,6 +6397,7 @@ function loadDeliveries() {
   try { raw = localStorage.getItem(DELIVERIES_KEY); } catch (err) { raw = null; }
   if (raw == null) {
     deliveriesState.items = [];
+    maybeRenameTriumTo3M();
     return;
   }
   try {
@@ -6378,6 +6407,7 @@ function loadDeliveries() {
   } catch (err) {
     deliveriesState.items = [];
   }
+  maybeRenameTriumTo3M();
 }
 
 
@@ -6768,6 +6798,7 @@ async function initInventoryCloud() {
     startInventoryCloudListeners();
     inventoryCloud.ready = true;
     maybeRenameTriumTo3M();
+    flushTriumRenameToCloud();
     if (typeof navigator !== "undefined" && navigator.onLine === false) updateInvSyncStatus("offline");
     else updateInvSyncStatus("synced");
     window.addEventListener("online", function () {
@@ -8771,6 +8802,9 @@ window.__customersApp = {
   openInventoryView: openInventoryView,
   closeInventoryView: closeInventoryView,
   loadInventory: loadInventory,
+  maybeRenameTriumTo3M: maybeRenameTriumTo3M,
+  applyInventorySnapshot: applyInventorySnapshot,
+  applyDeliveriesSnapshot: applyDeliveriesSnapshot,
   saveInventory: saveInventory,
   parseXlsxArrayBuffer: parseXlsxArrayBuffer,
   renderAll: renderAll,
@@ -8806,7 +8840,45 @@ else if ($("lockPassword")) $("lockPassword").focus();
   <script>
     if ((location.protocol === "http:" || location.protocol === "https:") && "serviceWorker" in navigator) {
       window.addEventListener("load", function () {
-        navigator.serviceWorker.register("./sw.js").catch(function (err) {
+        var swRefreshing = false;
+        navigator.serviceWorker.addEventListener("controllerchange", function () {
+          if (swRefreshing) return;
+          swRefreshing = true;
+          location.reload();
+        });
+        function showSwReloadPrompt() {
+          if (document.getElementById("swUpdateBar")) return;
+          var bar = document.createElement("div");
+          bar.id = "swUpdateBar";
+          bar.setAttribute("role", "status");
+          bar.dir = "rtl";
+          bar.style.cssText = "position:fixed;z-index:99999;left:12px;right:12px;bottom:16px;display:flex;gap:12px;align-items:center;justify-content:space-between;padding:12px 16px;border-radius:14px;background:#10201c;color:#e8f4ef;font-size:15px;box-shadow:0 8px 24px rgba(0,0,0,.35);";
+          bar.innerHTML = '<span>יצאה גרסה חדשה. רעננו כדי לראות את העדכון.</span>';
+          var btn = document.createElement("button");
+          btn.type = "button";
+          btn.textContent = "רענון";
+          btn.style.cssText = "flex:0 0 auto;padding:8px 14px;border:0;border-radius:10px;background:#1ea89a;color:#07231e;font-weight:700;cursor:pointer;";
+          btn.addEventListener("click", function () { location.reload(); });
+          bar.appendChild(btn);
+          document.body.appendChild(bar);
+        }
+        function watchWorker(worker) {
+          if (!worker) return;
+          if (worker.state === "installed" && navigator.serviceWorker.controller) showSwReloadPrompt();
+          worker.addEventListener("statechange", function () {
+            if (worker.state === "installed" && navigator.serviceWorker.controller) showSwReloadPrompt();
+          });
+        }
+        navigator.serviceWorker.register("./sw.js").then(function (reg) {
+          if (reg.waiting) watchWorker(reg.waiting);
+          reg.addEventListener("updatefound", function () { watchWorker(reg.installing); });
+          try { reg.update(); } catch (e1) {}
+          document.addEventListener("visibilitychange", function () {
+            if (document.visibilityState === "visible") {
+              try { reg.update(); } catch (e2) {}
+            }
+          });
+        }).catch(function (err) {
           console.warn("SW registration failed", err);
         });
       });

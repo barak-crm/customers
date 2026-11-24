@@ -1,7 +1,7 @@
 /* customers-map service worker (cloud-sync edition)
  * Cache version: bump CACHE_VERSION to refresh the app shell after a release.
  */
-const CACHE_VERSION = "v14-item-3m";
+const CACHE_VERSION = "v15-item-3m";
 const PREFIX = "customers-map-";
 const SHELL_CACHE = PREFIX + "shell-" + CACHE_VERSION;
 const CDN_CACHE = PREFIX + "cdn-" + CACHE_VERSION;
@@ -80,6 +80,26 @@ function isSameOrigin(url) {
   return url.origin === self.location.origin;
 }
 
+
+function networkFirst(request, cacheName) {
+  return fetch(request).then(function (resp) {
+    if (resp && resp.ok) {
+      caches.open(cacheName).then(function (cache) {
+        cache.put(request, resp.clone());
+      });
+    }
+    return resp;
+  }).catch(function (err) {
+    return caches.open(cacheName).then(function (cache) {
+      return cache.match(request, { ignoreSearch: true }).then(function (cached) {
+        return cached || cache.match("./index.html").then(function (shell) {
+          return shell || cache.match("./") || Promise.reject(err);
+        });
+      });
+    });
+  });
+}
+
 function cacheFirst(request, cacheName) {
   return caches.open(cacheName).then(function (cache) {
     return cache.match(request, { ignoreSearch: true }).then(function (cached) {
@@ -150,6 +170,9 @@ self.addEventListener("fetch", function (event) {
   }
 
   if (isSameOrigin(url)) {
-    event.respondWith(cacheFirst(request, SHELL_CACHE));
+    var isShellDoc = request.mode === "navigate" ||
+      request.destination === "document" ||
+      /(?:^|\/)(?:index\.html)?$/.test(url.pathname);
+    event.respondWith(isShellDoc ? networkFirst(request, SHELL_CACHE) : cacheFirst(request, SHELL_CACHE));
   }
 });
