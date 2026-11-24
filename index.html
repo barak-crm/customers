@@ -5318,7 +5318,7 @@ function bind() {
 
 /* ---------- Inventory ---------- */
 const INVENTORY_KEY = "element-inventory-v1";
-const INVENTORY_SEED_NAMES = ["GSWF", "Expel", "Conergiz", "Trium"];
+const INVENTORY_SEED_NAMES = ["GSWF", "Expel", "Conergiz", "3M"];
 
 const inventoryState = {
   items: [],
@@ -5383,6 +5383,109 @@ function findInventoryByName(name) {
   const key = inventoryNameKey(name);
   if (!key) return null;
   return inventoryState.items.find(function (it) { return inventoryNameKey(it.name) === key; }) || null;
+}
+
+
+var triumRenameNoticeShown = false;
+
+function isExactInventoryName(name, expected) {
+  return inventoryNameKey(name) === inventoryNameKey(expected);
+}
+
+function maybeRenameTriumTo3M() {
+  const oldName = "Trium";
+  const newName = "3M";
+  const has3M = (inventoryState.items || []).some(function (it) { return isExactInventoryName(it.name, newName); });
+  const triumItems = (inventoryState.items || []).filter(function (it) { return isExactInventoryName(it.name, oldName); });
+  if (triumItems.length && has3M) {
+    if (!triumRenameNoticeShown) {
+      triumRenameNoticeShown = true;
+      toast("לא עודכן השם ל-3M כי כבר קיים פריט בשם 3M. לא נוצרה כפילות.");
+    }
+    return { skipped: true, reason: "already-has-3M" };
+  }
+
+  const renamedItems = [];
+  if (triumItems.length && !has3M) {
+    const now = Date.now();
+    triumItems.forEach(function (it) {
+      it.name = newName;
+      it.updatedAt = now;
+      renamedItems.push(it);
+    });
+    saveInventory();
+  }
+
+  const renamedDeliveries = [];
+  (deliveriesState.items || []).forEach(function (d) {
+    if (isExactInventoryName(d.itemName, oldName)) {
+      d.itemName = newName;
+      renamedDeliveries.push(d);
+    }
+  });
+  if (renamedDeliveries.length) saveDeliveriesLocal();
+
+  let renamedOrders = 0;
+  if (typeof ordersState !== "undefined" && Array.isArray(ordersState.items)) {
+    ordersState.items.forEach(function (o) {
+      let changed = false;
+      (o.lines || []).forEach(function (line) {
+        if (isExactInventoryName(line.itemName, oldName)) {
+          line.itemName = newName;
+          changed = true;
+        }
+      });
+      if (changed) {
+        o.updatedAt = Date.now();
+        renamedOrders += 1;
+      }
+    });
+    if (renamedOrders) saveOrders();
+  }
+
+  if (renamedItems.length || renamedDeliveries.length || renamedOrders) {
+    if (typeof renderInventory === "function") renderInventory();
+    if (typeof renderOrders === "function" && $("ordersView") && !$("ordersView").hidden) renderOrders();
+    if (state.detailsId && typeof refreshDetails === "function") refreshDetails();
+    syncTriumRenameToCloud(renamedItems, renamedDeliveries);
+  }
+  return {
+    renamed: renamedItems.length,
+    deliveries: renamedDeliveries.length,
+    orders: renamedOrders
+  };
+}
+
+async function syncTriumRenameToCloud(invItems, deliveries) {
+  if (!inventoryCloud.ready || inventoryCloud.applyingRemote || !firebaseDb || !updateDoc) return;
+  const items = invItems || [];
+  const rows = deliveries || [];
+  if (!items.length && !rows.length) return;
+  bumpCloudPending(1);
+  try {
+    var i;
+    for (i = 0; i < items.length; i++) {
+      try {
+        await updateDoc(doc(firebaseDb, INVENTORY_COLLECTION, items[i].id), {
+          name: items[i].name,
+          updatedAt: items[i].updatedAt
+        });
+      } catch (err) {
+        console.warn("inventory name update failed", err);
+      }
+    }
+    for (i = 0; i < rows.length; i++) {
+      try {
+        await updateDoc(doc(firebaseDb, DELIVERIES_COLLECTION, rows[i].id), {
+          itemName: rows[i].itemName
+        });
+      } catch (err2) {
+        console.warn("delivery item name update failed", err2);
+      }
+    }
+  } finally {
+    bumpCloudPending(-1);
+  }
 }
 
 function loadInventory() {
@@ -6102,6 +6205,7 @@ async function handleInventoryFile(file) {
 function bindInventory() {
   loadInventory();
   loadDeliveries();
+  maybeRenameTriumTo3M();
   renderInventory();
   bindDeductionUi();
   initInventoryCloud();
@@ -6539,6 +6643,7 @@ function applyInventorySnapshot(snap) {
   renderInventory();
   if (state.detailsId) refreshDetails();
   inventoryCloud.applyingRemote = false;
+  maybeRenameTriumTo3M();
 }
 
 function applyDeliveriesSnapshot(snap) {
@@ -6552,6 +6657,7 @@ function applyDeliveriesSnapshot(snap) {
   renderInventory();
   if (state.detailsId) refreshDetails();
   inventoryCloud.applyingRemote = false;
+  maybeRenameTriumTo3M();
 }
 
 function statusFromSnapMeta(snap) {
@@ -6661,6 +6767,7 @@ async function initInventoryCloud() {
     await maybeMigrateInventoryToCloud();
     startInventoryCloudListeners();
     inventoryCloud.ready = true;
+    maybeRenameTriumTo3M();
     if (typeof navigator !== "undefined" && navigator.onLine === false) updateInvSyncStatus("offline");
     else updateInvSyncStatus("synced");
     window.addEventListener("online", function () {
@@ -8500,6 +8607,7 @@ function renderOrdersReport(root, csv) {
 function bindOrders() {
   loadOrders();
   ordersState._loaded = true;
+  maybeRenameTriumTo3M();
   if ($("btnOrdersBack")) $("btnOrdersBack").addEventListener("click", function () { setAppView("home"); });
   if ($("btnNewOrder")) $("btnNewOrder").addEventListener("click", function () { openOrderSheet(null); });
   if ($("ordersStatusFilter")) $("ordersStatusFilter").addEventListener("change", function () {
