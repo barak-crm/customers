@@ -1,7 +1,7 @@
 /* customers-map service worker (cloud-sync edition)
  * Cache version: bump CACHE_VERSION to refresh the app shell after a release.
  */
-const CACHE_VERSION = "v15-item-3m";
+const CACHE_VERSION = "v16-map-pins";
 const PREFIX = "customers-map-";
 const SHELL_CACHE = PREFIX + "shell-" + CACHE_VERSION;
 const CDN_CACHE = PREFIX + "cdn-" + CACHE_VERSION;

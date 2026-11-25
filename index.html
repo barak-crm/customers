@@ -2963,6 +2963,7 @@ const ISRAEL_CENTER = [31.5, 34.9];
 const ISRAEL_ZOOM = 8;
 const MAX_ROUTE_STOPS = 10;
 const NOMINATIM_GAP_MS = 1100;
+const GEO_CACHE_STORAGE_KEY = "element-geocode-cache-v1";
 const GEO_DEBOUNCE_MS = 800;
 const GEO_MIN_CHARS = 3;
 const GEO_LIMIT = 5;
@@ -3036,6 +3037,9 @@ let lastNominatimAt = 0;
 const geoCache = {};
 let geoTimer = null;
 let geoToken = 0;
+let bulkGeoRunning = false;
+let bulkGeoTimer = null;
+const geoFailedThisSession = {};
 let previewMarker = null;
 let formGeo = {
   status: "idle",
@@ -3834,7 +3838,7 @@ function refreshMapSize() {
 
 function fitMapToCustomers() {
   if (!map) return;
-  const pts = state.customers.filter(function (c) { return c.lat != null && c.lng != null && isFinite(c.lat) && isFinite(c.lng); });
+  const pts = state.customers.map(effectiveCoords).filter(Boolean);
   if (!pts.length) {
     map.setView(ISRAEL_CENTER, ISRAEL_ZOOM);
     return;
@@ -3843,14 +3847,15 @@ function fitMapToCustomers() {
     map.setView([pts[0].lat, pts[0].lng], 14);
     return;
   }
-  const bounds = L.latLngBounds(pts.map(function (c) { return [c.lat, c.lng]; }));
+  const bounds = L.latLngBounds(pts.map(function (p) { return [p.lat, p.lng]; }));
   map.fitBounds(bounds.pad(0.25));
 }
 
 var lastCoordsSig = null;
 function coordsSignature() {
   return state.customers.map(function (c) {
-    return String(c.id) + ":" + (c.lat != null ? c.lat : "") + ":" + (c.lng != null ? c.lng : "");
+    const pos = effectiveCoords(c);
+    return String(c.id) + ":" + (pos ? (pos.lat + "," + pos.lng) : "");
   }).sort().join("|");
 }
 
@@ -3862,13 +3867,20 @@ function maybeFitMap(force) {
 }
 
 function updateUnlocatedCount() {
-  const n = state.customers.filter(function (c) { return c.lat == null || c.lng == null; }).length;
+  const n = unlocatedCustomers(state.customers);
+  const locating = bulkGeoRunning && addressesNeedingGeocode().length;
   const els = ["unlocatedCount", "unlocatedCountMap"].map(function (id) { return $(id); }).filter(Boolean);
-  const text = !n ? "" : (n === 1 ? "לקוח אחד ללא מיקום" : (n + " לקוחות ללא מיקום"));
+  var text = "";
+  if (locating && n) text = "מאתר כתובות… " + (n === 1 ? "לקוח אחד ללא מיקום" : (n + " לקוחות ללא מיקום"));
+  else if (locating) text = "מאתר כתובות…";
+  else if (n === 1) text = "לקוח אחד ללא מיקום";
+  else if (n) text = n + " לקוחות ללא מיקום";
   els.forEach(function (el) {
     el.textContent = text;
-    el.hidden = !n;
+    el.hidden = !text;
   });
+  const home = $("homeUnlocated");
+  if (home) home.textContent = typeof formatCount === "function" ? formatCount(n) : String(n);
 }
 
 function applyMapFullscreen(expanded) {
@@ -3985,12 +3997,13 @@ function popupHtml(c) {
     }
   }
   if (c.notes) parts.push('<div class="popup-line">' + escapeHtml(c.notes) + "</div>");
-  if (c.lat == null || c.lng == null) {
+  const pos = effectiveCoords(c);
+  if (!pos) {
     parts.push('<div class="popup-line">אין מיקום על המפה עדיין</div>');
   }
   const actions = ['<div class="popup-actions">'];
-  if (c.lat != null && c.lng != null) {
-    const waze = "https://waze.com/ul?ll=" + c.lat + "," + c.lng + "&navigate=yes";
+  if (pos) {
+    const waze = "https://waze.com/ul?ll=" + pos.lat + "," + pos.lng + "&navigate=yes";
     actions.push('<a class="btn btn-sm btn-primary" href="' + waze + '" target="_blank" rel="noopener">Waze</a>');
   }
   actions.push('<button class="btn btn-sm" type="button" data-details="' + escapeHtml(c.id) + '">פרטים</button>');
@@ -4001,7 +4014,8 @@ function popupHtml(c) {
 }
 
 function upsertMarker(c) {
-  if (c.lat == null || c.lng == null) {
+  const pos = effectiveCoords(c);
+  if (!pos) {
     if (markers[c.id]) {
       map.removeLayer(markers[c.id]);
       delete markers[c.id];
@@ -4010,13 +4024,17 @@ function upsertMarker(c) {
   }
   const selected = state.selectedId === c.id;
   if (markers[c.id]) {
-    markers[c.id].setLatLng([c.lat, c.lng]);
+    markers[c.id].setLatLng([pos.lat, pos.lng]);
     markers[c.id].setIcon(markerIcon(c.color, selected));
     markers[c.id].setPopupContent(popupHtml(c));
+    if (markers[c.id].dragging) {
+      if (pos.source === "record") markers[c.id].dragging.enable();
+      else markers[c.id].dragging.disable();
+    }
   } else {
-    const m = L.marker([c.lat, c.lng], {
+    const m = L.marker([pos.lat, pos.lng], {
       icon: markerIcon(c.color, selected),
-      draggable: true,
+      draggable: pos.source === "record",
       riseOnHover: true
     });
     m.bindPopup(popupHtml(c));
@@ -4071,6 +4089,7 @@ function renderMarkers() {
   updateUnlocatedCount();
   maybeFitMap(false);
   refreshMapSize();
+  scheduleBulkGeocode();
 }
 
 function enterPlaceMode(id, message) {
@@ -4251,7 +4270,7 @@ function renderList() {
       addr.appendChild(tag);
       main.appendChild(name);
       main.appendChild(addr);
-      if (c.lat == null || c.lng == null) {
+      if (!effectiveCoords(c)) {
         const meta = document.createElement("div");
         meta.className = "row-meta";
         meta.textContent = state.placingId === c.id ? "ממתין ללחיצה על המפה…" : "אין מיקום על המפה";
@@ -4669,8 +4688,107 @@ function renderFormColors() {
 }
 
 function geoCacheKey(q) {
-  return String(q || "").trim().toLowerCase();
+  return String(q || "").trim().toLowerCase().replace(/\s+/g, " ");
 }
+
+function loadGeoCache() {
+  try {
+    const raw = localStorage.getItem(GEO_CACHE_STORAGE_KEY);
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    if (!data || typeof data !== "object" || Array.isArray(data)) return;
+    Object.keys(data).forEach(function (k) {
+      if (Array.isArray(data[k])) geoCache[k] = data[k];
+    });
+  } catch (err) {}
+}
+
+function persistGeoCache() {
+  try {
+    localStorage.setItem(GEO_CACHE_STORAGE_KEY, JSON.stringify(geoCache));
+  } catch (err) {}
+}
+
+function geocodeSearchQuery(q) {
+  const s = String(q || "").trim();
+  if (!s) return "";
+  const k = s.toLowerCase();
+  if (k.indexOf("ישראל") === -1 && k.indexOf("israel") === -1) return s + ", ישראל";
+  return s;
+}
+
+function hasOwnCoords(c) {
+  return !!(c && c.lat != null && c.lng != null && isFinite(Number(c.lat)) && isFinite(Number(c.lng)));
+}
+
+function effectiveCoords(c) {
+  if (hasOwnCoords(c)) {
+    return { lat: Number(c.lat), lng: Number(c.lng), source: "record" };
+  }
+  const key = geoCacheKey(c && c.address);
+  if (!key || !Object.prototype.hasOwnProperty.call(geoCache, key)) return null;
+  const hit = geoCache[key] && geoCache[key][0];
+  if (!hit || !isFinite(hit.lat) || !isFinite(hit.lng)) return null;
+  return { lat: hit.lat, lng: hit.lng, source: "cache" };
+}
+
+function addressesNeedingGeocode() {
+  const seen = {};
+  const out = [];
+  (state.customers || []).forEach(function (c) {
+    if (hasOwnCoords(c)) return;
+    const addr = String(c.address || "").trim();
+    if (addr.length < GEO_MIN_CHARS) return;
+    const key = geoCacheKey(addr);
+    if (Object.prototype.hasOwnProperty.call(geoCache, key) || seen[key] || geoFailedThisSession[key]) return;
+    seen[key] = true;
+    out.push(addr);
+  });
+  return out;
+}
+
+function scheduleBulkGeocode() {
+  if (bulkGeoTimer) return;
+  bulkGeoTimer = setTimeout(function () {
+    bulkGeoTimer = null;
+    startBulkGeocode();
+  }, 50);
+}
+
+async function startBulkGeocode() {
+  if (bulkGeoRunning) return;
+  const queue = addressesNeedingGeocode();
+  if (!queue.length) {
+    updateUnlocatedCount();
+    return;
+  }
+  bulkGeoRunning = true;
+  updateUnlocatedCount();
+  var i;
+  for (i = 0; i < queue.length; i++) {
+    try {
+      await geocodeResults(queue[i]);
+    } catch (err) {
+      console.warn("bulk geocode failed", err);
+      geoFailedThisSession[geoCacheKey(queue[i])] = true;
+    }
+    if (mapReady) renderMarkers();
+    else updateUnlocatedCount();
+  }
+  bulkGeoRunning = false;
+  if (addressesNeedingGeocode().length) {
+    scheduleBulkGeocode();
+    return;
+  }
+  if (mapReady) {
+    renderMarkers();
+    maybeFitMap(true);
+  } else {
+    updateUnlocatedCount();
+  }
+}
+
+loadGeoCache();
 
 function normalizeGeoResults(data) {
   if (!data || !data.length) return [];
@@ -4691,13 +4809,14 @@ async function geocodeResults(q) {
   const wait = NOMINATIM_GAP_MS - (Date.now() - lastNominatimAt);
   if (wait > 0) await new Promise(function (r) { setTimeout(r, wait); });
   lastNominatimAt = Date.now();
-  const url = "https://nominatim.openstreetmap.org/search?format=json&limit=" + GEO_LIMIT + "&countrycodes=il&q=" + encodeURIComponent(query);
+  const url = "https://nominatim.openstreetmap.org/search?format=json&limit=" + GEO_LIMIT + "&countrycodes=il&q=" + encodeURIComponent(geocodeSearchQuery(query));
   const res = await fetch(url, {
     headers: { "Accept": "application/json", "Accept-Language": "he" }
   });
   if (!res.ok) throw new Error("geocode HTTP " + res.status);
   const results = normalizeGeoResults(await res.json());
   geoCache[key] = results;
+  persistGeoCache();
   return results;
 }
 
@@ -5121,8 +5240,10 @@ function loadDemo() {
 
 function openGoogleRoute() {
   const stops = state.routeIds.map(function (id) {
-    return state.customers.find(function (c) { return c.id === id; });
-  }).filter(function (c) { return c && c.lat != null && c.lng != null; });
+    const c = state.customers.find(function (x) { return x.id === id; });
+    const pos = c ? effectiveCoords(c) : null;
+    return pos ? { customer: c, pos: pos } : null;
+  }).filter(Boolean);
   if (!stops.length) {
     toast("יש לבחור לפחות לקוח אחד עם מיקום על המפה");
     return;
@@ -5131,7 +5252,7 @@ function openGoogleRoute() {
     alert("נבחרו " + stops.length + " עצירות, אך Google Maps מאפשר עד כ־" + MAX_ROUTE_STOPS + " עצירות בקישור אחד. יש לצמצם את הבחירה.");
     return;
   }
-  const path = stops.map(function (c) { return c.lat + "," + c.lng; }).join("/");
+  const path = stops.map(function (s) { return s.pos.lat + "," + s.pos.lng; }).join("/");
   const url = "https://www.google.com/maps/dir/" + path;
   window.open(url, "_blank", "noopener");
 }
@@ -5165,7 +5286,7 @@ function bind() {
   $("btnDemo").addEventListener("click", loadDemo);
   $("btnSelectVisible").addEventListener("click", function () {
     visibleCustomers().forEach(function (c) {
-      if (c.lat == null) return;
+      if (!effectiveCoords(c)) return;
       if (state.routeIds.indexOf(c.id) === -1) state.routeIds.push(c.id);
     });
     renderList();
@@ -7400,9 +7521,7 @@ function inventoryFacts(items) {
 }
 
 function unlocatedCustomers(customers) {
-  return (customers || []).filter(function (c) {
-    return !c || c.lat == null || c.lng == null || !isFinite(Number(c.lat)) || !isFinite(Number(c.lng));
-  }).length;
+  return (customers || []).filter(function (c) { return !effectiveCoords(c); }).length;
 }
 /* UX_PURE_END */
 
@@ -8811,6 +8930,9 @@ window.__customersApp = {
   openDetails: openDetails,
   setMapVisible: function (v) { applyMapVisibility(!!v); },
   geocodeAddress: geocodeAddress,
+  effectiveCoords: effectiveCoords,
+  startBulkGeocode: startBulkGeocode,
+  geoCache: geoCache,
   autoGeocodeAddress: autoGeocodeAddress,
   getFormGeo: function () { return formGeo; },
   selectCustomer: selectCustomer,
