@@ -2416,7 +2416,15 @@
     html[data-theme="dark"] .order-status.fulfilled { background: #14532d; color: #bbf7d0; }
     html[data-theme="dark"] .orders-top { background: var(--surface); }
 
-  </style>
+    .crm-sync-pill { cursor: pointer; font: inherit; }
+  .crm-sync-pill[data-status="denied"], .crm-sync-pill[data-status="error"] { color: #f87171; border-color: rgba(248,113,113,.5); }
+  .cloud-status { margin: 0 0 12px; font-weight: 600; }
+  .cloud-hint { margin: 4px 0 12px; font-size: 13px; opacity: .8; line-height: 1.5; }
+  @media (max-width: 560px) {
+    .header-actions:has(#crmSyncPill:not([hidden])) #invSyncPill { display: none !important; }
+    .crm-sync-pill { white-space: nowrap; }
+  }
+</style>
 
 </head>
 <body>
@@ -2446,6 +2454,7 @@
       <div class="header-actions">
         <span id="syncPill" class="sync-pill" hidden></span>
         <span id="invSyncPill" class="inv-sync-pill" data-inv-sync hidden>מצב מקומי</span>
+        <button type="button" id="crmSyncPill" class="inv-sync-pill crm-sync-pill" hidden>ענן</button>
         <span id="userChip" class="user-chip" hidden>
           <span class="user-av" id="userAv">?</span>
           <span class="user-email" id="userEmail"></span>
@@ -2470,6 +2479,7 @@
             <button class="btn" type="button" id="btnOpenOrders">הזמנות</button>
             <button class="btn" type="button" id="btnOpenInventory">מלאי</button>
             <button class="btn btn-map-toggle" type="button" id="btnToggleMapHeader" aria-pressed="false" aria-controls="map" aria-expanded="false">מסך מלא</button>
+            <button class="btn" type="button" id="btnCloud">סנכרון לענן</button>
             <button class="btn" type="button" id="btnExport">ייצוא JSON</button>
             <button class="btn" type="button" id="btnImport">ייבוא JSON</button>
             <button class="btn" type="button" id="btnDemo">טען לקוחות הדגמה</button>
@@ -2905,6 +2915,46 @@
     </div>
   </div>
 
+<div class="sheet-backdrop" id="cloudBackdrop">
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="cloudTitle" id="cloudSheet">
+      <div class="sheet-handle" aria-hidden="true"></div>
+      <header>
+        <h2 id="cloudTitle">סנכרון לענן</h2>
+        <button class="sheet-close" type="button" id="btnCloudClose" aria-label="סגור">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </header>
+      <form class="sheet-body" id="cloudForm" autocomplete="on">
+        <p class="cloud-status" id="cloudStatusText">הלקוחות וההזמנות נשמרים כרגע במכשיר הזה בלבד.</p>
+        <div id="cloudSignedOut">
+          <div class="field">
+            <label for="cloudEmail">אימייל</label>
+            <input id="cloudEmail" type="email" dir="ltr" autocomplete="username" inputmode="email" />
+          </div>
+          <div class="field">
+            <label for="cloudPassword">סיסמה לענן</label>
+            <input id="cloudPassword" type="password" dir="ltr" autocomplete="current-password" />
+          </div>
+          <p class="cloud-hint">זה חשבון הענן (Firebase), לא קוד הכניסה לאפליקציה. בכניסה הראשונה נשמר קודם גיבוי מלא במכשיר, ורק אחר כך הנתונים עולים לענן. שום דבר לא נמחק מהמכשיר.</p>
+          <div class="sheet-actions">
+            <button class="btn" type="button" id="btnCloudSignUp">יצירת חשבון</button>
+            <button class="btn btn-primary" type="submit" id="btnCloudSignIn">כניסה לענן</button>
+          </div>
+        </div>
+        <div id="cloudSignedIn" hidden>
+          <p class="cloud-hint">מחובר כ: <b id="cloudUserEmail" dir="ltr"></b></p>
+          <div class="sheet-actions">
+            <button class="btn" type="button" id="btnCloudSignOut">התנתקות מהענן</button>
+          </div>
+        </div>
+        <div class="sheet-actions">
+          <button class="btn" type="button" id="btnCloudBackup">הורדת גיבוי (JSON)</button>
+        </div>
+        <div class="inv-deduct-error" id="cloudError" role="alert"></div>
+      </form>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
@@ -2920,7 +2970,7 @@ let initializeApp, getAuth, onAuthStateChanged, signInWithEmailAndPassword, sign
 let initializeFirestore, persistentLocalCache, persistentMultipleTabManager, memoryLocalCache;
 let collection, doc, setDoc, deleteDoc, onSnapshot, serverTimestamp, writeBatch;
 let updateDoc, getDoc, getDocs, getDocsFromServer, increment, runTransaction;
-let connectFirestoreEmulator, connectAuthEmulator, signInAnonymously;
+let connectFirestoreEmulator, connectAuthEmulator, signInAnonymously, createUserWithEmailAndPassword;
 
 /* =============================================================================
  * FIREBASE CONFIG — paste the Firebase web-app config here (one block only).
@@ -3256,6 +3306,7 @@ function mirrorLocal() {
   } catch (err) {
     console.warn("mirrorLocal failed", err);
   }
+  if (typeof scheduleCrmPush === "function") scheduleCrmPush();
 }
 
 function saveState() {
@@ -3679,6 +3730,7 @@ async function loadFirebaseSdk() {
   connectFirestoreEmulator = fsMod.connectFirestoreEmulator;
   signInAnonymously = authMod.signInAnonymously;
   connectAuthEmulator = authMod.connectAuthEmulator;
+  createUserWithEmailAndPassword = authMod.createUserWithEmailAndPassword;
 }
 
 async function initFirebaseOrLocalMessage() {
@@ -5321,7 +5373,7 @@ function bind() {
     if (nav && nav.contains(e.target)) return;
     setHeaderMenuOpen(false);
   });
-  ["btnExport", "btnImport", "btnDemo", "btnSignOut", "btnToggleMapHeader", "btnOpenInventory", "btnOpenHome", "btnOpenReports", "btnOpenOrders"].forEach(function (id) {
+  ["btnCloud", "btnExport", "btnImport", "btnDemo", "btnSignOut", "btnToggleMapHeader", "btnOpenInventory", "btnOpenHome", "btnOpenReports", "btnOpenOrders"].forEach(function (id) {
     const el = $(id);
     if (el) el.addEventListener("click", function () { setHeaderMenuOpen(false); });
   });
@@ -6877,43 +6929,102 @@ async function maybeMigrateInventoryToCloud() {
   inventoryCloud.migrated = true;
 }
 
-async function initInventoryCloud() {
-  updateInvSyncStatus(inventoryCloudWanted() ? "pending" : "local");
-  if (!inventoryCloudWanted()) {
-    updateInvSyncStatus("local");
-    return;
+/* ---------- Firebase core (shared by inventory + CRM cloud sync) ---------- */
+var firebaseCoreReady = false;
+var cloudAuthUnsub = null;
+
+async function ensureFirebaseCore() {
+  if (firebaseCoreReady) return true;
+  await loadFirebaseSdk();
+  const cfg = effectiveFirebaseConfig();
+  if (!firebaseApp) firebaseApp = initializeApp(cfg);
+  firebaseAuth = getAuth(firebaseApp);
+  if (isInventoryEmulatorMode()) {
+    try { connectAuthEmulator(firebaseAuth, EMU_AUTH_URL, { disableWarnings: true }); }
+    catch (e1) { /* already connected */ }
   }
-  try {
-    await loadFirebaseSdk();
-    const cfg = effectiveFirebaseConfig();
-    if (!firebaseApp) firebaseApp = initializeApp(cfg);
-    firebaseAuth = getAuth(firebaseApp);
-    if (isInventoryEmulatorMode()) {
-      try { connectAuthEmulator(firebaseAuth, EMU_AUTH_URL, { disableWarnings: true }); }
-      catch (e1) { /* already connected */ }
-    }
-    if (!firebaseDb) {
+  if (!firebaseDb) {
+    try {
+      firebaseDb = initializeFirestore(firebaseApp, {
+        localCache: persistentLocalCache({
+          tabManager: persistentMultipleTabManager()
+        })
+      });
+    } catch (persistErr) {
       try {
-        firebaseDb = initializeFirestore(firebaseApp, {
-          localCache: persistentLocalCache({
-            tabManager: persistentMultipleTabManager()
-          })
-        });
-      } catch (persistErr) {
-        try {
-          firebaseDb = initializeFirestore(firebaseApp, { localCache: memoryLocalCache() });
-        } catch (memErr) {
-          // already initialized
-        }
+        firebaseDb = initializeFirestore(firebaseApp, { localCache: memoryLocalCache() });
+      } catch (memErr) {
+        // already initialized
       }
     }
-    if (isInventoryEmulatorMode() && connectFirestoreEmulator) {
-      try { connectFirestoreEmulator(firebaseDb, EMU_FIRESTORE_HOST, EMU_FIRESTORE_PORT); }
-      catch (e2) { /* already connected */ }
-    }
-    if (firebaseAuth && !firebaseAuth.currentUser) {
-      await signInAnonymously(firebaseAuth);
-    }
+  }
+  if (isInventoryEmulatorMode() && connectFirestoreEmulator) {
+    try { connectFirestoreEmulator(firebaseDb, EMU_FIRESTORE_HOST, EMU_FIRESTORE_PORT); }
+    catch (e2) { /* already connected */ }
+  }
+  firebaseCoreReady = true;
+  return true;
+}
+
+function isCloudMember(user) {
+  return !!(user && !user.isAnonymous && user.email);
+}
+
+/* Cloud sync requires a signed-in, allowlisted email account (no anonymous access:
+   the app's unlock code is client-side only, so anonymous access would expose customer data). */
+async function initInventoryCloud() {
+  updateInvSyncStatus("local");
+  if (!inventoryCloudWanted()) return;
+  try {
+    await ensureFirebaseCore();
+  } catch (err) {
+    console.warn("firebase init failed; staying local", err);
+    inventoryCloud.enabled = false;
+    inventoryCloud.ready = false;
+    updateInvSyncStatus("local");
+    setCrmStatus("unavailable");
+    return;
+  }
+  if (!cloudAuthUnsub) {
+    cloudAuthUnsub = onAuthStateChanged(firebaseAuth, function (user) {
+      onCloudUserChanged(user).catch(function (err) { console.warn("cloud user change", err); });
+    });
+  }
+}
+
+async function onCloudUserChanged(user) {
+  const member = isCloudMember(user) ? user : null;
+  currentUser = member;
+  crmCloud.user = member;
+  if (!member) {
+    stopInventoryCloud();
+    stopCrmSync();
+    setCrmStatus("local");
+    return;
+  }
+  // Backup-first: before anything is uploaded or merged on this device.
+  if (!ensureCrmBackup()) {
+    setCrmStatus("backup-failed");
+    toast("לא ניתן לשמור גיבוי במכשיר — הסנכרון לענן לא הופעל. הנתונים נשארו במכשיר.");
+    return;
+  }
+  await connectInventoryCloud();
+  startCrmSync();
+}
+
+function stopInventoryCloud() {
+  if (inventoryCloud.unsubInv) { try { inventoryCloud.unsubInv(); } catch (e) {} }
+  if (inventoryCloud.unsubDel) { try { inventoryCloud.unsubDel(); } catch (e) {} }
+  inventoryCloud.unsubInv = null;
+  inventoryCloud.unsubDel = null;
+  inventoryCloud.enabled = false;
+  inventoryCloud.ready = false;
+  updateInvSyncStatus("local");
+}
+
+async function connectInventoryCloud() {
+  if (inventoryCloud.ready) return;
+  try {
     inventoryCloud.enabled = true;
     await maybeMigrateInventoryToCloud();
     startInventoryCloudListeners();
@@ -6922,19 +7033,575 @@ async function initInventoryCloud() {
     flushTriumRenameToCloud();
     if (typeof navigator !== "undefined" && navigator.onLine === false) updateInvSyncStatus("offline");
     else updateInvSyncStatus("synced");
-    window.addEventListener("online", function () {
-      if (inventoryCloud.enabled) updateInvSyncStatus(inventoryCloud.pending ? "pending" : "synced");
-    });
-    window.addEventListener("offline", function () {
-      if (inventoryCloud.enabled) updateInvSyncStatus("offline");
-    });
+    if (!inventoryCloud.netListeners) {
+      inventoryCloud.netListeners = true;
+      window.addEventListener("online", function () {
+        if (inventoryCloud.enabled) updateInvSyncStatus(inventoryCloud.pending ? "pending" : "synced");
+        if (crmCloud.running) scheduleCrmPush();
+      });
+      window.addEventListener("offline", function () {
+        if (inventoryCloud.enabled) updateInvSyncStatus("offline");
+      });
+    }
   } catch (err) {
-    console.warn("inventory cloud init failed; staying local", err);
+    console.warn("inventory cloud connect failed; staying local", err);
     inventoryCloud.enabled = false;
     inventoryCloud.ready = false;
-    updateInvSyncStatus(inventoryCloudWanted() ? "offline" : "local");
+    updateInvSyncStatus("offline");
   }
 }
+
+/* ---------- CRM cloud sync: customers, orders, legend ----------
+   Firestore docs mirror the local model exactly (same ids/fields) + deleted:false.
+   Deletions are tombstones {id, deleted:true, deletedAt, updatedAt, updatedBy}.
+   Conflict rule: last write wins per record by updatedAt (millis). */
+var ORDERS_COLLECTION = "orders";
+var CRM_SYNC_PREFIX = "element-crm-sync-v1:";
+var CRM_BACKUP_PREFIX = "element-crm-backup-v1:";
+var crmCloud = {
+  user: null,
+  running: false,
+  status: "local",
+  unsubC: null,
+  unsubO: null,
+  unsubL: null,
+  pushTimer: null,
+  pushing: false,
+  pushAgain: false,
+  firstServer: { customers: false, orders: false, legend: false },
+  lastError: ""
+};
+var crmSyncStateCache = null;
+
+function crmProjectId() {
+  const cfg = effectiveFirebaseConfig();
+  return (cfg && cfg.projectId) || "default";
+}
+function crmSyncKey() { return CRM_SYNC_PREFIX + crmProjectId(); }
+function crmBackupKey() { return CRM_BACKUP_PREFIX + crmProjectId(); }
+
+function crmState() {
+  if (crmSyncStateCache && crmSyncStateCache.__key === crmSyncKey()) return crmSyncStateCache;
+  let d = null;
+  try { d = JSON.parse(localStorage.getItem(crmSyncKey()) || "null"); } catch (e) { d = null; }
+  if (!d || typeof d !== "object") d = {};
+  d.customers = d.customers || {};
+  d.orders = d.orders || {};
+  d.tomb = d.tomb || {};
+  d.tomb.customers = d.tomb.customers || {};
+  d.tomb.orders = d.tomb.orders || {};
+  d.legend = d.legend || null;
+  d.migratedAt = d.migratedAt || 0;
+  Object.defineProperty(d, "__key", { value: crmSyncKey(), enumerable: false });
+  crmSyncStateCache = d;
+  return d;
+}
+function saveCrmState() {
+  try { localStorage.setItem(crmSyncKey(), JSON.stringify(crmState())); }
+  catch (e) { console.warn("crm sync state save failed", e); }
+}
+
+function crmActor() {
+  return (crmCloud.user && crmCloud.user.email) || currentEmail() || "";
+}
+
+function stableStringify(v) {
+  if (v === null || typeof v !== "object") return JSON.stringify(v === undefined ? null : v);
+  if (Array.isArray(v)) return "[" + v.map(stableStringify).join(",") + "]";
+  return "{" + Object.keys(v).filter(function (k) { return v[k] !== undefined; }).sort().map(function (k) {
+    return JSON.stringify(k) + ":" + stableStringify(v[k]);
+  }).join(",") + "}";
+}
+function crmHash(d) {
+  const c = Object.assign({}, d);
+  delete c.updatedAt;
+  delete c.updatedBy;
+  return stableStringify(c);
+}
+function plainClone(v) { return JSON.parse(JSON.stringify(v)); }
+
+function customerCloudDoc(c) {
+  const d = plainClone(c);
+  d.deleted = false;
+  return d;
+}
+function orderCloudDoc(o) {
+  const d = plainClone(o);
+  d.deleted = false;
+  return d;
+}
+function crmKindConf(kind) {
+  if (kind === "customers") {
+    return {
+      coll: CUSTOMERS_COLLECTION,
+      list: function () { return state.customers; },
+      setList: function (l) { state.customers = l; },
+      toDoc: customerCloudDoc,
+      normalize: function (r, id) { return normalizeCustomer(Object.assign({}, r, { id: id }), id); }
+    };
+  }
+  return {
+    coll: ORDERS_COLLECTION,
+    list: function () { return ordersState.items; },
+    setList: function (l) { ordersState.items = l; },
+    toDoc: orderCloudDoc,
+    normalize: function (r, id) { return normalizeOrder(Object.assign({}, r, { id: id })); }
+  };
+}
+
+/* ----- backup-first ----- */
+function ensureCrmBackup() {
+  const s = crmState();
+  if (s.migratedAt) return true;
+  try {
+    if (localStorage.getItem(crmBackupKey())) return true;
+    const payload = {
+      kind: "element-crm-backup",
+      reason: "before-first-cloud-sync",
+      savedAt: new Date().toISOString(),
+      projectId: crmProjectId(),
+      customers: state.customers,
+      legend: state.legend,
+      orders: ordersState.items,
+      inventory: inventoryState.items,
+      deliveries: deliveriesState.items,
+      raw: {}
+    };
+    // Exact stored strings too, byte-for-byte, for a lossless restore.
+    [STORAGE_KEY, ORDERS_KEY, INVENTORY_KEY, DELIVERIES_KEY].forEach(function (k) {
+      try { payload.raw[k] = localStorage.getItem(k); } catch (e) {}
+    });
+    localStorage.setItem(crmBackupKey(), JSON.stringify(payload));
+    crmCloud.freshBackup = true;
+    return true;
+  } catch (err) {
+    console.warn("backup failed", err);
+    return false;
+  }
+}
+
+function downloadCrmBackup() {
+  let raw = null;
+  try { raw = localStorage.getItem(crmBackupKey()); } catch (e) { raw = null; }
+  if (!raw) {
+    // No pre-sync backup on this device yet: download a fresh snapshot instead.
+    raw = JSON.stringify({
+      kind: "element-crm-backup",
+      reason: "manual",
+      savedAt: new Date().toISOString(),
+      projectId: crmProjectId(),
+      customers: state.customers,
+      legend: state.legend,
+      orders: ordersState.items,
+      inventory: inventoryState.items,
+      deliveries: deliveriesState.items
+    });
+  }
+  let stamp = "";
+  try { stamp = (JSON.parse(raw).savedAt || "").slice(0, 10); } catch (e) {}
+  const blob = new Blob([raw], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "element-backup-" + (stamp || new Date().toISOString().slice(0, 10)) + ".json";
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+}
+
+/* ----- listeners ----- */
+function startCrmSync() {
+  if (crmCloud.running || !firebaseDb || !crmCloud.user) return;
+  crmCloud.running = true;
+  crmCloud.firstServer = { customers: false, orders: false, legend: false };
+  setCrmStatus("pending");
+  crmCloud.unsubC = onSnapshot(
+    collection(firebaseDb, CUSTOMERS_COLLECTION),
+    { includeMetadataChanges: true },
+    function (snap) { applyCrmSnapshot("customers", snap); },
+    onCrmListenError
+  );
+  crmCloud.unsubO = onSnapshot(
+    collection(firebaseDb, ORDERS_COLLECTION),
+    { includeMetadataChanges: true },
+    function (snap) { applyCrmSnapshot("orders", snap); },
+    onCrmListenError
+  );
+  crmCloud.unsubL = onSnapshot(
+    doc(firebaseDb, SETTINGS_COLLECTION, LEGEND_DOC_ID),
+    { includeMetadataChanges: true },
+    applyCrmLegendSnapshot,
+    onCrmListenError
+  );
+}
+
+function stopCrmSync() {
+  ["unsubC", "unsubO", "unsubL"].forEach(function (k) {
+    if (crmCloud[k]) { try { crmCloud[k](); } catch (e) {} }
+    crmCloud[k] = null;
+  });
+  clearTimeout(crmCloud.pushTimer);
+  crmCloud.running = false;
+}
+
+function isPermissionError(err) {
+  const code = String((err && err.code) || "");
+  return code.indexOf("permission-denied") >= 0 || code.indexOf("unauthenticated") >= 0;
+}
+
+function onCrmListenError(err) {
+  console.warn("crm listener", err);
+  stopCrmSync();
+  setCrmStatus(isPermissionError(err) ? "denied" : "error");
+}
+
+function applyCrmSnapshot(kind, snap) {
+  const conf = crmKindConf(kind);
+  const s = crmState();
+  const entries = s[kind];
+  const tomb = s.tomb[kind];
+  const migrating = !s.migratedAt;
+  const original = conf.list() || [];
+  const byId = {};
+  original.forEach(function (r) { if (r && r.id) byId[r.id] = r; });
+  const remoteIds = {};
+  const added = [];
+  let changedLocal = false;
+
+  snap.forEach(function (ds) {
+    const r = ds.data() || {};
+    const id = ds.id;
+    remoteIds[id] = true;
+    const ru = Number(toMillis(r.updatedAt)) || 0;
+    const local = byId[id];
+    if (r.deleted) {
+      if (local) {
+        const lu = Number(local.updatedAt) || 0;
+        if (migrating || lu > ru) {
+          // Never delete local data during the first sync; a newer local edit also wins.
+          entries[id] = { h: "remote-deleted", u: ru, dirty: true };
+          return;
+        }
+        delete byId[id];
+        changedLocal = true;
+      }
+      entries[id] = { h: "deleted", u: ru, del: true };
+      tomb[id] = Math.max(tomb[id] || 0, ru);
+      return;
+    }
+    const norm = conf.normalize(r, id);
+    if (!norm) return;
+    const rh = crmHash(conf.toDoc(norm));
+    if (!local) {
+      const t = tomb[id] || 0;
+      if (t && t >= ru) {
+        // Deleted here after the cloud version was written: re-send the tombstone.
+        entries[id] = { h: "stale", u: ru };
+        return;
+      }
+      byId[id] = norm;
+      added.push(id);
+      changedLocal = true;
+      entries[id] = { h: rh, u: ru };
+      return;
+    }
+    const lh = crmHash(conf.toDoc(local));
+    const lu = Number(local.updatedAt) || 0;
+    if (lh === rh) {
+      entries[id] = { h: rh, u: Math.max(ru, lu) };
+      return;
+    }
+    if (ru > lu || (ru === lu && !migrating)) {
+      byId[id] = norm;
+      changedLocal = true;
+      entries[id] = { h: rh, u: ru };
+      return;
+    }
+    entries[id] = { h: rh, u: ru, dirty: true };
+  });
+
+  if (!snap.metadata.fromCache) {
+    Object.keys(byId).forEach(function (id) {
+      if (remoteIds[id]) return;
+      // Local record the cloud doesn't have: upload it as-is.
+      delete entries[id];
+    });
+    crmCloud.firstServer[kind] = true;
+  }
+
+  if (changedLocal) {
+    const next = [];
+    added.forEach(function (id) { next.push(byId[id]); });
+    original.forEach(function (r) { if (r && r.id && byId[r.id] && added.indexOf(r.id) < 0) next.push(byId[r.id]); });
+    if (kind === "customers") {
+      const hadDates = next.some(function (c) { return c && (c.createdAt || c.updatedAt); });
+      conf.setList(hadDates ? sortCustomers(next) : next);
+      mirrorLocal();
+      if (state.selectedId && !state.customers.some(function (c) { return c.id === state.selectedId; })) state.selectedId = null;
+      try { renderAll(); } catch (e) { console.warn(e); }
+    } else {
+      conf.setList(next);
+      saveOrders();
+      try { if (typeof renderOrders === "function") renderOrders(); } catch (e) {}
+      try { if (typeof refreshDashboardFigures === "function") refreshDashboardFigures(); } catch (e) {}
+    }
+  }
+  saveCrmState();
+  maybeFinishMigration();
+  scheduleCrmPush(0);
+}
+
+function applyCrmLegendSnapshot(snap) {
+  const s = crmState();
+  const fromServer = !snap.metadata.fromCache;
+  if (snap.exists()) {
+    const r = snap.data() || {};
+    const labels = (r.labels && typeof r.labels === "object") ? r.labels : {};
+    const ru = Number(toMillis(r.updatedAt)) || 0;
+    const localH = stableStringify(state.legend || {});
+    const remoteH = stableStringify(labels);
+    if (!s.legend) {
+      // First sync: union (local labels win), never drop local labels.
+      const merged = Object.assign({}, labels, state.legend || {});
+      if (stableStringify(merged) !== localH) { state.legend = merged; mirrorLocal(); renderLegend(); renderColorFilters(); }
+      s.legend = { h: remoteH, u: ru };
+    } else if (remoteH !== localH && ru > (s.legend.u || 0)) {
+      state.legend = Object.assign({}, labels);
+      s.legend = { h: remoteH, u: ru };
+      mirrorLocal();
+      renderLegend();
+      renderColorFilters();
+    } else if (remoteH === localH) {
+      s.legend = { h: remoteH, u: Math.max(ru, s.legend.u || 0) };
+    }
+  }
+  if (fromServer) crmCloud.firstServer.legend = true;
+  saveCrmState();
+  maybeFinishMigration();
+  scheduleCrmPush(0);
+}
+
+function maybeFinishMigration() {
+  const s = crmState();
+  const f = crmCloud.firstServer;
+  if (s.migratedAt || !f.customers || !f.orders || !f.legend) return;
+  crmCloud.finishPending = true;
+}
+
+/* ----- push (diff local vs last-synced state) ----- */
+function scheduleCrmPush(delay) {
+  if (!crmCloud || !crmCloud.running) return;
+  clearTimeout(crmCloud.pushTimer);
+  crmCloud.pushTimer = setTimeout(function () { crmPush(); }, typeof delay === "number" ? delay : 400);
+}
+
+function collectCrmOps(kind, ops, actor) {
+  const conf = crmKindConf(kind);
+  const s = crmState();
+  const entries = s[kind];
+  const tomb = s.tomb[kind];
+  const seen = {};
+  (conf.list() || []).forEach(function (rec) {
+    if (!rec || !rec.id) return;
+    seen[rec.id] = true;
+    let d = conf.toDoc(rec);
+    const h = crmHash(d);
+    const e = entries[rec.id];
+    if (e && e.h === h && !e.dirty) return;
+    let bumped = false;
+    if (e && (Number(rec.updatedAt) || 0) <= (e.u || 0)) {
+      // Edited locally without a newer timestamp: stamp it so it wins (LWW).
+      rec.updatedAt = Math.max(Date.now(), (e.u || 0) + 1);
+      if (actor) rec.updatedBy = actor;
+      d = conf.toDoc(rec);
+      bumped = true;
+    }
+    // Never-synced record (first upload): sent exactly as stored locally.
+    const id = rec.id;
+    const data = d;
+    ops.push({
+      kind: kind,
+      ref: doc(firebaseDb, conf.coll, id),
+      data: data,
+      bumped: bumped,
+      after: function () { entries[id] = { h: crmHash(data), u: Number(data.updatedAt) || 0 }; delete tomb[id]; }
+    });
+  });
+  Object.keys(entries).forEach(function (id) {
+    if (seen[id]) return;
+    const e = entries[id];
+    if (e.del) return;
+    const ts = Math.max(Date.now(), (e.u || 0) + 1);
+    const data = { id: id, deleted: true, deletedAt: ts, updatedAt: ts, updatedBy: actor || "" };
+    ops.push({
+      kind: kind,
+      ref: doc(firebaseDb, conf.coll, id),
+      data: data,
+      after: function () { entries[id] = { h: "deleted", u: ts, del: true }; tomb[id] = ts; }
+    });
+  });
+}
+
+async function crmPush() {
+  if (!crmCloud.running || !firebaseDb) return;
+  if (crmCloud.pushing) { crmCloud.pushAgain = true; return; }
+  crmCloud.pushing = true;
+  try {
+    do {
+      crmCloud.pushAgain = false;
+      const actor = crmActor();
+      const ops = [];
+      if (crmCloud.firstServer.customers) collectCrmOps("customers", ops, actor);
+      if (crmCloud.firstServer.orders) collectCrmOps("orders", ops, actor);
+      const s = crmState();
+      let legendOp = null;
+      if (crmCloud.firstServer.legend) {
+        const lh = stableStringify(state.legend || {});
+        if (!s.legend || s.legend.h !== lh) {
+          const ts = Math.max(Date.now(), ((s.legend && s.legend.u) || 0) + 1);
+          legendOp = { labels: plainClone(state.legend || {}), updatedAt: ts, updatedBy: actor || "" };
+          ops.push({
+            ref: doc(firebaseDb, SETTINGS_COLLECTION, LEGEND_DOC_ID),
+            data: legendOp,
+            after: function () { s.legend = { h: lh, u: ts }; }
+          });
+        }
+      }
+      for (let i = 0; i < ops.length; i += 400) {
+        const batch = writeBatch(firebaseDb);
+        ops.slice(i, i + 400).forEach(function (op) { batch.set(op.ref, op.data); });
+        await batch.commit();
+      }
+      ops.forEach(function (op) { op.after(); });
+      saveCrmState();
+      if (ops.some(function (op) { return op.bumped && op.kind === "customers"; })) mirrorLocal();
+      if (ops.some(function (op) { return op.bumped && op.kind === "orders"; })) saveOrders();
+      if (crmCloud.finishPending && !s.migratedAt) {
+        s.migratedAt = Date.now();
+        crmCloud.finishPending = false;
+        saveCrmState();
+        toast("הלקוחות וההזמנות סונכרנו לענן. גיבוי מלא נשמר במכשיר.");
+      }
+    } while (crmCloud.pushAgain);
+    setCrmStatus(navigator.onLine === false ? "offline" : (crmState().migratedAt ? "synced" : "pending"));
+  } catch (err) {
+    console.warn("crm push failed", err);
+    if (isPermissionError(err)) { stopCrmSync(); setCrmStatus("denied"); }
+    else setCrmStatus("error");
+  } finally {
+    crmCloud.pushing = false;
+  }
+}
+
+/* ----- status + UI ----- */
+function setCrmStatus(st) {
+  if (st) crmCloud.status = st;
+  const labels = {
+    local: "הלקוחות וההזמנות נשמרים כרגע במכשיר הזה בלבד.",
+    pending: "מסנכרן עם הענן…",
+    synced: "מסונכרן — לקוחות, הזמנות ומלאי משותפים בענן.",
+    offline: "אין רשת — השינויים נשמרים במכשיר ויעלו כשהחיבור יחזור.",
+    error: "הסנכרון נכשל זמנית. הנתונים שמורים במכשיר.",
+    denied: "החשבון הזה לא מורשה לגשת לנתונים בענן. הנתונים נשארו במכשיר.",
+    unavailable: "הענן לא זמין כרגע. הנתונים שמורים במכשיר.",
+    "backup-failed": "לא ניתן לשמור גיבוי — הסנכרון לא הופעל. הנתונים נשארו במכשיר."
+  };
+  const pillLabels = { pending: "ענן: מסנכרן", synced: "ענן: מסונכרן", offline: "ענן: לא מקוון", error: "ענן: שגיאה", denied: "ענן: אין הרשאה", unavailable: "ענן: לא זמין", "backup-failed": "ענן: לא פעיל" };
+  const st2 = crmCloud.status;
+  const t = $("cloudStatusText");
+  if (t) t.textContent = labels[st2] || labels.local;
+  const pill = $("crmSyncPill");
+  if (pill) {
+    pill.hidden = !crmCloud.user;
+    pill.textContent = pillLabels[st2] || "ענן";
+    pill.setAttribute("data-status", st2);
+    pill.setAttribute("title", labels[st2] || "");
+  }
+  const inBox = $("cloudSignedIn");
+  const outBox = $("cloudSignedOut");
+  if (inBox) inBox.hidden = !crmCloud.user;
+  if (outBox) outBox.hidden = !!crmCloud.user;
+  const em = $("cloudUserEmail");
+  if (em) em.textContent = (crmCloud.user && crmCloud.user.email) || "";
+}
+
+function cloudAuthErrorText(err) {
+  const code = String((err && err.code) || "");
+  const msg = String((err && err.message) || "");
+  if (code === "auth/configuration-not-found" || msg.indexOf("CONFIGURATION_NOT_FOUND") >= 0) {
+    return "כניסה לענן עדיין לא הופעלה בפרויקט Firebase (צריך להפעיל Email/Password ב-Authentication).";
+  }
+  if (code === "auth/email-already-in-use") return "כבר קיים חשבון עם האימייל הזה — השתמשו ב״כניסה לענן״.";
+  if (code === "auth/weak-password") return "הסיסמה קצרה מדי (לפחות 6 תווים).";
+  if (code === "auth/admin-restricted-operation") return "יצירת חשבונות חדשים סגורה. בקשו מהמנהל ליצור לכם משתמש.";
+  return hebrewAuthError(err);
+}
+
+function openCloudSheet() {
+  const b = $("cloudBackdrop");
+  if (!b) return;
+  $("cloudError").textContent = "";
+  setCrmStatus();
+  b.classList.add("open");
+  if (!crmCloud.user && $("cloudEmail")) setTimeout(function () { $("cloudEmail").focus(); }, 50);
+}
+function closeCloudSheet() {
+  const b = $("cloudBackdrop");
+  if (b) b.classList.remove("open");
+}
+
+async function cloudSignInOrUp(create) {
+  const err = $("cloudError");
+  err.textContent = "";
+  const email = ($("cloudEmail").value || "").trim();
+  const pass = $("cloudPassword").value || "";
+  if (!email || !pass) { err.textContent = "יש להזין אימייל וסיסמה"; return; }
+  if (!inventoryCloudWanted()) { err.textContent = "הענן לא מוגדר באפליקציה הזו."; return; }
+  const btns = [$("btnCloudSignIn"), $("btnCloudSignUp")];
+  btns.forEach(function (b) { if (b) b.disabled = true; });
+  try {
+    await ensureFirebaseCore();
+    if (!cloudAuthUnsub) await initInventoryCloud();
+    if (create) await createUserWithEmailAndPassword(firebaseAuth, email, pass);
+    else await signInWithEmailAndPassword(firebaseAuth, email, pass);
+    $("cloudPassword").value = "";
+    toast(crmState().migratedAt ? "מחובר לענן" : "מחובר לענן — שומר גיבוי ומסנכרן…");
+    if (crmCloud.freshBackup) {
+      crmCloud.freshBackup = false;
+      try { downloadCrmBackup(); } catch (e) {}
+    }
+    closeCloudSheet();
+  } catch (e) {
+    console.warn("cloud sign-in", e);
+    err.textContent = cloudAuthErrorText(e);
+  } finally {
+    btns.forEach(function (b) { if (b) b.disabled = false; });
+  }
+}
+
+async function cloudSignOut() {
+  try {
+    stopCrmSync();
+    if (firebaseAuth) await signOut(firebaseAuth);
+    toast("נותקת מהענן. הנתונים נשארו במכשיר.");
+  } catch (e) {
+    console.warn(e);
+  }
+  setCrmStatus("local");
+}
+
+function bindCrmCloudUi() {
+  const on = function (id, ev, fn) { const el = $(id); if (el) el.addEventListener(ev, fn); };
+  on("btnCloud", "click", openCloudSheet);
+  on("crmSyncPill", "click", openCloudSheet);
+  on("btnCloudClose", "click", closeCloudSheet);
+  on("cloudBackdrop", "click", function (e) { if (e.target === $("cloudBackdrop")) closeCloudSheet(); });
+  on("cloudForm", "submit", function (e) { e.preventDefault(); cloudSignInOrUp(false); });
+  on("btnCloudSignUp", "click", function () { cloudSignInOrUp(true); });
+  on("btnCloudSignOut", "click", cloudSignOut);
+  on("btnCloudBackup", "click", downloadCrmBackup);
+  setCrmStatus("local");
+}
+
 
 function openDeductionSheet(opts) {
   opts = opts || {};
@@ -8294,6 +8961,7 @@ function saveOrders() {
   } catch (err) {
     toast("לא ניתן לשמור את ההזמנות בדפדפן זה");
   }
+  if (typeof scheduleCrmPush === "function") scheduleCrmPush();
 }
 
 function orderTotal(o) {
@@ -8913,6 +9581,12 @@ window.__customersApp = {
   commitDelivery: commitDelivery,
   undoDelivery: undoDelivery,
   initInventoryCloud: initInventoryCloud,
+  crmCloud: crmCloud,
+  crmState: function () { return crmState(); },
+  crmPush: function () { return crmPush(); },
+  downloadCrmBackup: function () { return downloadCrmBackup(); },
+  mirrorLocal: function () { return mirrorLocal(); },
+  saveOrders: function () { return saveOrders(); },
   inventoryCloud: inventoryCloud,
   renderInventory: renderInventory,
   parseInventoryText: parseInventoryText,
@@ -8955,6 +9629,7 @@ renderFeed();
 renderList();
 bind();
 applyMapFullscreen(false);
+bindCrmCloudUi();
 if (sessionStorage.getItem(SESSION_KEY) === "1") showApp();
 else if ($("lockPassword")) $("lockPassword").focus();
   </script>
